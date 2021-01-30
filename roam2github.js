@@ -46,6 +46,7 @@ async function init() {
 
         const page = await browser.newPage()
         await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: download_dir })
+        await page.setDefaultNavigationTimeout(0)
 
         await roam_login(page)
         await roam_export(page)
