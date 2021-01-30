@@ -46,7 +46,7 @@ async function init() {
 
         const page = await browser.newPage()
         await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: download_dir })
-        await page.setDefaultNavigationTimeout(0)
+        await page.setDefaultTimeout(0) // safe, because main.yml sets timeout to 5min. NOTE: markdown export sometimes hangs up, so may need timeout waiting for that, to allow continue to additional graphs
 
         await roam_login(page)
         await roam_export(page)
