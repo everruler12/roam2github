@@ -8,7 +8,7 @@ Inspired by https://github.com/MatthieuBizien/roam-to-git
 - Only backups up JSON (markdown causes too many errors)
 - better error debugging
 
-### Plans
+### Future Plans
 
 - [ ] edn support
 - [ ] multiple graph backups in same repo
