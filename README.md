@@ -8,6 +8,10 @@ Inspired by https://github.com/MatthieuBizien/roam-to-git
 - Only backups up JSON (markdown causes too many errors)
 - better error debugging
 
+### Demo with instruction how to use
+
+https://github.com/everruler12/roam2github-demo
+
 ### Future Plans
 
 - [ ] edn support
