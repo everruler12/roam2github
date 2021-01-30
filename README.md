@@ -4,7 +4,7 @@ Inspired by https://github.com/MatthieuBizien/roam-to-git
 
 ### Differences
 
-- Uses Node and Puppeteer instead.
+- Uses Node (rather than Python).
 - Only backups up JSON (markdown causes too many errors)
 - better error debugging
 
