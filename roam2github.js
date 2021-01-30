@@ -45,8 +45,8 @@ async function init() {
         // const browser = await puppeteer.launch({ headless: false }) // to test locally and see what's going on
 
         const page = await browser.newPage()
+        page.setDefaultTimeout(0) // safe, because main.yml sets timeout to 5min. NOTE: markdown export sometimes hangs up, so may need timeout waiting for that, to allow continue to additional graphs
         await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: download_dir })
-        await page.setDefaultTimeout(0) // safe, because main.yml sets timeout to 5min. NOTE: markdown export sometimes hangs up, so may need timeout waiting for that, to allow continue to additional graphs
 
         await roam_login(page)
         await roam_export(page)
@@ -145,13 +145,21 @@ async function roam_export(page) {
                 [...document.querySelectorAll('button')].find(button => button.innerText == 'Export All').click()
             })
 
-            log('Waiting for download to start')
+            log('Waiting for JSON download to start')
             await page.waitForSelector('.bp3-spinner')
             await page.waitForSelector('.bp3-spinner', { hidden: true })
 
-            log('JSON container downloaded')
+            log('Downloading JSON')
+            const checkDownloads = async () => {
+                const files = await fs.readdir(download_dir)
 
-            resolve()
+                if (files[0] && files[0].match(/\.zip$/)) { // contains .zip file
+                    log('JSON container downloaded:', files[0])
+                    resolve()
+                } else checkDownloads()
+            }
+            checkDownloads()
+
         } catch (err) { reject(err) }
     })
 }
