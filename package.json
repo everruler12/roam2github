@@ -1,6 +1,6 @@
 {
   "name": "roam2github",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Automatic Roam Research backups",
   "main": "roam2github.js",
   "dependencies": {

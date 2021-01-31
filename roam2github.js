@@ -45,7 +45,7 @@ async function init() {
         // const browser = await puppeteer.launch({ headless: false }) // to test locally and see what's going on
 
         const page = await browser.newPage()
-        page.setDefaultTimeout(0) // safe, because main.yml sets timeout to 5min. NOTE: markdown export sometimes hangs up, so may need timeout waiting for that, to allow continue to additional graphs
+        page.setDefaultTimeout(600000) // 10min
         await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: download_dir })
 
         await roam_login(page)
@@ -71,16 +71,17 @@ async function roam_login(page) {
 
             const email_selector = 'input[name="email"]'
 
-            log('Waiting for login form')
+            log('Signing in')
+            // log('Waiting for login form')
             await page.waitForSelector(email_selector)
 
-            log('Filling email field')
+            // log('Filling email field')
             await page.type(email_selector, R2G_EMAIL)
 
-            log('Filling password field')
+            // log('Filling password field')
             await page.type('input[name="password"]', R2G_PASSWORD)
 
-            log('Clicking "Sign In"')
+            // log('Clicking "Sign In"')
             await page.evaluate(() => {
                 [...document.querySelectorAll('button')].find(button => button.innerText == 'Sign In').click()
             })
@@ -97,7 +98,7 @@ async function roam_login(page) {
             } else if (await page.$(graphs_selector)) {
                 log('Login successful')
                 resolve()
-            } else { // timeout
+            } else { // timeout?
                 reject('Login error: unknown')
             }
 
@@ -109,15 +110,26 @@ async function roam_export(page) {
     return new Promise(async (resolve, reject) => {
         try {
 
+            // TODO allow multiple graphs
+
             log('Navigating to graph')
             await page.goto('https://roamresearch.com/404')// workaround to get disablecss and disablejs parameters to work by navigating away due to issue with puppeteer and # hash navigation (used in SPAs like Roam)
             await page.goto(`https://roamresearch.com/#/app/${R2G_GRAPH}?disablecss=true&disablejs=true`)
 
-            log('Waiting for graph to load')
-            // CHECK if have permission to view graph
-            // IDEAS check for .navbar for app
-            // IDEAS wait for astrolabe spinner to stop
-            // IDEAS allow multiple graphs
+            // log('Waiting for graph to load')
+            await page.waitForSelector('.loading-astrolabe')
+            log('astrolabe spinning...')
+            await page.waitForSelector('.loading-astrolabe', { hidden: true })
+            log('astrolabe spinning stopped')
+
+            // try {
+            await page.waitForSelector('.roam-app') // add short timeout here, if fails, don't exit code 1, and instead CHECK if have permission to view graph
+            // } catch (err) {
+            //     await page.waitForSelector('.navbar') // Likely screen saying 'You do not have permission to view this database'
+            //     reject()
+            // }
+            log('Graph loaded')
+
             await page.waitForSelector('.bp3-icon-more')
 
             // log('Clicking "Share, export and more"')
@@ -159,6 +171,7 @@ async function roam_export(page) {
                 } else checkDownloads()
             }
             checkDownloads()
+            // TODO how to check multiple downloads?
 
         } catch (err) { reject(err) }
     })
@@ -183,12 +196,8 @@ async function extract_json() {
 
                 log('Extracting JSON from ' + file)
                 await extract(source, { dir: target })
-
                 // log('Extraction complete')
 
-
-
-                // IDEA change JSON downloaded log to Downloaded Roam-Export-1234567890.zip
                 const json_filename = `${R2G_GRAPH}.json`
                 const json_fullpath = path.join(target, json_filename)
                 const new_json_fullpath = path.join(backup_dir, 'json', json_filename)
@@ -228,3 +237,6 @@ function error(err) {
     console.timeEnd('R2G Exit after')
     process.exit(1)
 }
+
+// IDEA commit screenshot if error instead of process.exit(1)
+// await page.screenshot({path: `error ${timestamp}.png`}) // will need to pass page as parameter... or set as parent scope
