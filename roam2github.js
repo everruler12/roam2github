@@ -130,9 +130,9 @@ async function roam_open_graph(page) {
 
             // log('- Waiting for graph to load')
             await page.waitForSelector('.loading-astrolabe')
-            log('astrolabe spinning...')
+            log('- astrolabe spinning...')
             await page.waitForSelector('.loading-astrolabe', { hidden: true })
-            log('astrolabe spinning stopped')
+            log('- astrolabe spinning stopped')
 
             // try {
             await page.waitForSelector('.roam-app') // add short timeout here, if fails, don't exit code 1, and instead CHECK if have permission to view graph
@@ -151,9 +151,10 @@ async function roam_download(page, filetype) {
     return new Promise(async (resolve, reject) => {
         try {
 
+            log('Exporting', filetype)
             await page.waitForSelector('.bp3-icon-more')
 
-            log('- Clicking "Share, export and more"')
+            log('- Clicking "..." button')
             await page.click('.bp3-icon-more')
 
             log('- Clicking "Export All"')
@@ -188,18 +189,18 @@ async function roam_download(page, filetype) {
                 [...document.querySelectorAll('button')].find(button => button.innerText == 'Export All').click()
             })
 
-            log('Waiting for', filetype, 'download to start')
+            log('- Waiting for download to start')
             await page.waitForSelector('.bp3-spinner')
             await page.waitForSelector('.bp3-spinner', { hidden: true })
 
-            log('- Downloading', filetype)
+            log('- Downloading')
             downloads_started++
 
             const checkDownloads = async () => {
                 const files = await fs.readdir(download_dir)
 
                 if (files && files.filter(file => file.match(/\.zip$/)).length == downloads_started) { // contains .zip file
-                    log('-', filetype, 'downloaded')
+                    log(filetype, 'downloaded!')
                     resolve()
                 } else checkDownloads()
             }
