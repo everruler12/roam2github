@@ -9,7 +9,7 @@ roam-to-git has offered great peace mind knowing my Roam data is safe. However, 
 - Uses Node (rather than Python)
 - Supports EDN! And JSON (No Markdown support yet, as it has been causing too many errors and timeouts)
 - Better error debugging
-- Active support from the developer (me) to get your backups running smoothly and error-free
+- Active support from the developer (Erik Newhard @everruler12) to get your backups running smoothly and error-free
 
 ### Instructions
 
@@ -19,11 +19,11 @@ https://github.com/everruler12/roam2github-demo
 
 ### Future Plans
 
-- [x] edn support
 - [ ] new, full guide for non-roam-to-git users
 - [ ] multiple graph backups in same repo
 - [ ] markdown support
 - [ ] any other ideas? Let me know!
+- [x] edn support
 
 ### EDN Backups are live!
 
