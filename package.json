@@ -1,6 +1,6 @@
 {
   "name": "roam2github",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Automatic Roam Research backups",
   "main": "roam2github.js",
   "dependencies": {
@@ -11,12 +11,11 @@
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node roam2github.js"
   },
   "repository": {
     "type": "git",
-    "url": "roam2github"
+    "url": "https://github.com/everruler12/roam2github.git"
   },
   "author": "everruler12",
   "license": "MIT"
