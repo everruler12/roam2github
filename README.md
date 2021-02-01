@@ -7,7 +7,7 @@ roam-to-git has offered a great relief for my mind. However, it was not uncommon
 ### Differences
 
 - Uses Node (rather than Python).
-- Backups JSON and EDN (Skips markdown for now, as it has caused too many errors and timeouts)
+- Supports EDN! And JSON. (No Markdown support yet, as it has been causing too many errors and timeouts)
 - better error debugging
 
 ### Instructions
