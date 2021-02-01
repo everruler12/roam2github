@@ -45,7 +45,7 @@ async function init() {
     try {
         await fs.remove(download_dir, { recursive: true })
 
-        log('Creating browser')
+        log('Create browser')
         const browser = await puppeteer.launch({ args: ['--no-sandbox'] }) // to run in GitHub Actions
         // const browser = await puppeteer.launch({ headless: false }) // to test locally and see what's going on
 
@@ -55,20 +55,31 @@ async function init() {
         // page.on('console', consoleObj => console.log(consoleObj.text())) // for console.log() to work in page.evaluate() https://stackoverflow.com/a/46245945
         // await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36'); // https://github.com/puppeteer/puppeteer/issues/1477#issuecomment-437568281
 
+        log('Login')
         await roam_login(page)
 
         // for each graph {
+        log('Open Graph')
         await roam_open_graph(page)
+
+        log('Download JSON')
         await roam_download(page, 'JSON')
+
+        log('Download EDN')
         await roam_download(page, 'EDN')
         // }
 
-        log('Closing browser')
+        log('Close browser')
         browser.close()
 
+        log('Extract zips')
         await extract_zips()
+
+        log('Format and save')
         await format_and_save()
         // deleteDir(download_dir)
+
+        log('DONE!')
 
     } catch (err) { error(err) }
 
@@ -79,25 +90,26 @@ async function roam_login(page) {
     return new Promise(async (resolve, reject) => {
         try {
 
-            log('Navigating to login page')
+            log('- Navigating to login page')
             await page.goto('https://roamresearch.com/#/signin')
 
             const email_selector = 'input[name="email"]'
 
-            log('Signing in')
-            log('- Waiting for login form')
+            log('- Waiting for email field')
             await page.waitForSelector(email_selector)
-            // possible refresh a second time on login screen https://github.com/MatthieuBizien/roam-to-git/issues/87#issuecomment-763281895
 
             log('- Filling email field')
             await page.type(email_selector, R2G_EMAIL)
 
             log('- Filling password field')
             await page.type('input[name="password"]', R2G_PASSWORD)
+
             log('- Clicking "Sign In"')
             await page.evaluate(() => {
                 [...document.querySelectorAll('button')].find(button => button.innerText == 'Sign In').click()
             })
+
+            // possible refresh a second time on login screen https://github.com/MatthieuBizien/roam-to-git/issues/87#issuecomment-763281895
 
             const login_error_selector = 'div[style="font-size: 12px; color: red;"]' // error message on login page
             const graphs_selector = '.my-graphs' // successful login, on graphs selection page
@@ -123,12 +135,12 @@ async function roam_open_graph(page) {
     return new Promise(async (resolve, reject) => {
         try {
 
-            log('Navigating to graph')
+            log('- Navigating to graph')
             // log('Navigating to graph', R2G_GRAPH.split('').join(' '))
             await page.goto('https://roamresearch.com/404')// workaround to get disablecss and disablejs parameters to work by navigating away due to issue with puppeteer and # hash navigation (used in SPAs like Roam)
             await page.goto(`https://roamresearch.com/#/app/${R2G_GRAPH}?disablecss=true&disablejs=true`)
 
-            // log('- Waiting for graph to load')
+            // log('- Waiting for astrolabe spinner')
             await page.waitForSelector('.loading-astrolabe')
             log('- astrolabe spinning...')
             await page.waitForSelector('.loading-astrolabe', { hidden: true })
@@ -151,19 +163,23 @@ async function roam_download(page, filetype) {
     return new Promise(async (resolve, reject) => {
         try {
 
-            log('Exporting', filetype)
+            // log('- Waiting for "..." button', filetype)
             await page.waitForSelector('.bp3-icon-more')
 
             log('- Clicking "..." button')
             await page.click('.bp3-icon-more')
 
-            log('- Clicking "Export All"')
-            await page.evaluate(() => {
-                [...document.querySelectorAll('li .bp3-fill')].find(li => li.innerText == 'Export All').click()
-            })
+            log('- Waiting for "Export All" option')
+            // await page.waitForFunction(`[...document.querySelectorAll('li .bp3-fill')].find(li => li.innerText == 'Export All')`)
+            // await page.waitForFunction(() => [...document.querySelectorAll('li .bp3-fill')].find(li => li.innerText == 'Export All'))
+            const exportAll_option = await page.waitForXPath("//div[@class='bp3-text-overflow-ellipsis bp3-fill' and contains(., 'Export All')]")
+            log('- Clicking "Export All" option')
+            // await page.evaluate(() => { [...document.querySelectorAll('li .bp3-fill')].find(li => li.innerText == 'Export All').click() })
+            await exportAll_option.click()
+
+            const chosen_format_selector = '.bp3-dialog .bp3-button-text'
 
             log('- Waiting for export dialog')
-            const chosen_format_selector = '.bp3-dialog .bp3-button-text'
             await page.waitForSelector(chosen_format_selector)
 
             const chosen_format = await page.$eval(chosen_format_selector, el => el.innerText)
@@ -172,19 +188,19 @@ async function roam_download(page, filetype) {
                 log('- Clicking Export Format')
                 await page.click(chosen_format_selector)
 
-                page.waitForSelector('.bp3-text-overflow-ellipsis')
+                log('- Waiting for dropdown')
+                await page.waitForSelector('.bp3-text-overflow-ellipsis')
 
                 log('- Choosing', filetype)
                 await page.evaluate((filetype) => {
                     [...document.querySelectorAll('.bp3-text-overflow-ellipsis')].find(dropdown => dropdown.innerText == filetype).click()
-                    // [...document.querySelectorAll('.bp3-text-overflow-ellipsis')].find(dropdown => dropdown.innerText == 'JSON').click()
                 }, filetype)
 
             } else {
-                log(filetype, 'already selected')
+                log('-', filetype, 'already selected')
             }
 
-            log('- Clicking "Export All"')
+            log('- Clicking "Export All" button')
             await page.evaluate(() => {
                 [...document.querySelectorAll('button')].find(button => button.innerText == 'Export All').click()
             })
@@ -219,9 +235,9 @@ async function extract_zips() {
             if (files.length === 0) reject('Extraction error: download_dir is empty')
 
             for (const file of files) {
-                log('Extracting ' + file)
                 const file_fullpath = path.join(download_dir, file)
 
+                log('- Extracting ' + file)
                 await extract(file_fullpath, { dir: extract_dir })
                 // log('Extraction complete')
             }
@@ -248,24 +264,23 @@ async function format_and_save() {
 
                 if (fileext == 'json') {
 
-                    // log('Formatting JSON')
+                    log('- Formatting JSON')
                     const json = await fs.readJson(file_fullpath)
                     const new_json = JSON.stringify(json, null, 2)
 
-                    log('Saving formatted JSON')
+                    log('- Saving formatted JSON')
                     fs.outputFile(new_file_fullpath, new_json)
                 } else if (fileext == 'edn') {
 
-                    log('Formatting EDN (this can take a couple minutes for large graphs)') // This could take a couple minutes for large graphs
+                    log('- Formatting EDN (this can take a couple minutes for large graphs)') // This could take a couple minutes for large graphs
                     const edn = await fs.readFile(file_fullpath, 'utf-8')
 
                     const edn_prefix = '#datascript/DB '
                     var new_edn = edn_prefix + edn_formatter.format(edn.replace(new RegExp('^' + edn_prefix), ''))
                     checkFormattedEDN(edn, new_edn)
 
-                    log('Saving formatted EDN')
+                    log('- Saving formatted EDN')
                     fs.outputFile(new_file_fullpath, new_edn)
-
                 }
             }
 
