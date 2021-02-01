@@ -26,7 +26,7 @@ const backup_dir = IS_LOCAL ? path.join(__dirname, 'backup') : getRepoPath()
 
 let downloads_started = 0
 
-const { R2G_EMAIL, R2G_PASSWORD, R2G_GRAPH } = process.env
+const { R2G_EMAIL, R2G_PASSWORD, R2G_GRAPH, TIMEOUT } = process.env
 
 if (!R2G_EMAIL) error('Secrets error: R2G_EMAIL not found')
 if (!R2G_PASSWORD) error('Secrets error: R2G_PASSWORD not found')
@@ -50,7 +50,7 @@ async function init() {
         // const browser = await puppeteer.launch({ headless: false }) // to test locally and see what's going on
 
         const page = await browser.newPage()
-        page.setDefaultTimeout(600000) // 10min
+        page.setDefaultTimeout(TIMEOUT || 600000) // 10min default
         await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: download_dir })
         // page.on('console', consoleObj => console.log(consoleObj.text())) // for console.log() to work in page.evaluate() https://stackoverflow.com/a/46245945
         // await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36'); // https://github.com/puppeteer/puppeteer/issues/1477#issuecomment-437568281
@@ -85,17 +85,16 @@ async function roam_login(page) {
             const email_selector = 'input[name="email"]'
 
             log('Signing in')
-            // log('Waiting for login form')
+            log('- Waiting for login form')
             await page.waitForSelector(email_selector)
             // possible refresh a second time on login screen https://github.com/MatthieuBizien/roam-to-git/issues/87#issuecomment-763281895
 
-            // log('Filling email field')
+            log('- Filling email field')
             await page.type(email_selector, R2G_EMAIL)
 
-            // log('Filling password field')
+            log('- Filling password field')
             await page.type('input[name="password"]', R2G_PASSWORD)
-
-            // log('Clicking "Sign In"')
+            log('- Clicking "Sign In"')
             await page.evaluate(() => {
                 [...document.querySelectorAll('button')].find(button => button.innerText == 'Sign In').click()
             })
@@ -129,7 +128,7 @@ async function roam_open_graph(page) {
             await page.goto('https://roamresearch.com/404')// workaround to get disablecss and disablejs parameters to work by navigating away due to issue with puppeteer and # hash navigation (used in SPAs like Roam)
             await page.goto(`https://roamresearch.com/#/app/${R2G_GRAPH}?disablecss=true&disablejs=true`)
 
-            // log('Waiting for graph to load')
+            // log('- Waiting for graph to load')
             await page.waitForSelector('.loading-astrolabe')
             log('astrolabe spinning...')
             await page.waitForSelector('.loading-astrolabe', { hidden: true })
@@ -154,37 +153,37 @@ async function roam_download(page, filetype) {
 
             await page.waitForSelector('.bp3-icon-more')
 
-            // log('Clicking "Share, export and more"')
+            log('- Clicking "Share, export and more"')
             await page.click('.bp3-icon-more')
 
-            // log('Clicking "Export All"')
+            log('- Clicking "Export All"')
             await page.evaluate(() => {
                 [...document.querySelectorAll('li .bp3-fill')].find(li => li.innerText == 'Export All').click()
             })
 
-            // log('Waiting for export dialog')
+            log('- Waiting for export dialog')
             const chosen_format_selector = '.bp3-dialog .bp3-button-text'
             await page.waitForSelector(chosen_format_selector)
 
             const chosen_format = await page.$eval(chosen_format_selector, el => el.innerText)
 
             if (filetype != chosen_format) {
-                // log('Clicking Export Format')
+                log('- Clicking Export Format')
                 await page.click(chosen_format_selector)
 
                 page.waitForSelector('.bp3-text-overflow-ellipsis')
 
-                // log('Choosing', filetype)
+                log('- Choosing', filetype)
                 await page.evaluate((filetype) => {
                     [...document.querySelectorAll('.bp3-text-overflow-ellipsis')].find(dropdown => dropdown.innerText == filetype).click()
                     // [...document.querySelectorAll('.bp3-text-overflow-ellipsis')].find(dropdown => dropdown.innerText == 'JSON').click()
                 }, filetype)
 
             } else {
-                // log(filetype, 'already selected')
+                log(filetype, 'already selected')
             }
 
-            // log('Clicking "Export All"')
+            log('- Clicking "Export All"')
             await page.evaluate(() => {
                 [...document.querySelectorAll('button')].find(button => button.innerText == 'Export All').click()
             })
@@ -193,14 +192,14 @@ async function roam_download(page, filetype) {
             await page.waitForSelector('.bp3-spinner')
             await page.waitForSelector('.bp3-spinner', { hidden: true })
 
-            // log('Downloading', filetype)
+            log('- Downloading', filetype)
             downloads_started++
 
             const checkDownloads = async () => {
                 const files = await fs.readdir(download_dir)
 
                 if (files && files.filter(file => file.match(/\.zip$/)).length == downloads_started) { // contains .zip file
-                    log('Downloaded', filetype)
+                    log('-', filetype, 'downloaded')
                     resolve()
                 } else checkDownloads()
             }
@@ -255,11 +254,12 @@ async function format_and_save() {
                     log('Saving formatted JSON')
                     fs.outputFile(new_file_fullpath, new_json)
                 } else if (fileext == 'edn') {
-                    const edn_prefix = '#datascript/DB '
 
-                    log('Formatting EDN') // This could take awhile for large graphs
+                    log('Formatting EDN (this can take a couple minutes for large graphs)') // This could take a couple minutes for large graphs
                     const edn = await fs.readFile(file_fullpath, 'utf-8')
-                    var new_edn = edn_prefix + edn_formatter.format(edn.replace(edn_prefix, ''))
+
+                    const edn_prefix = '#datascript/DB '
+                    var new_edn = edn_prefix + edn_formatter.format(edn.replace(new RegExp('^' + edn_prefix), ''))
                     checkFormattedEDN(edn, new_edn)
 
                     log('Saving formatted EDN')
