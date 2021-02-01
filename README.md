@@ -19,11 +19,11 @@ https://github.com/everruler12/roam2github-demo
 
 ### Future Plans
 
-- [ ] new, full guide for non-roam-to-git users
-- [ ] multiple graph backups in same repo
-- [ ] markdown support
-- [ ] any other ideas? Let me know!
-- [x] edn support
+- [ ] New, full guide for non-roam-to-git users
+- [ ] Multiple graph backups in same repo
+- [ ] Markdown support
+- [ ] Any other features you want?
+- [x] EDN support
 
 ### EDN Backups are live!
 
