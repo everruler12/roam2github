@@ -2,13 +2,14 @@
 
 Inspired by https://github.com/MatthieuBizien/roam-to-git
 
-roam-to-git has offered a great relief for my mind. However, it was not uncommon for backups to fail with unknown errors a couple times a day. Then it got to the point where all my backups were failing. The creator is not very active with support, and I don't know Python to fork and edit. So I decided to roll my own backup solution using Node, with clearer logging to make troubleshooting easier.
+roam-to-git has offered great peace mind knowing my Roam data is safe. However, backups regularly failed with unknown errors multiple times a week. Then it got to the point on 2021-01-28 where all my backups were failing. The creator is not very active with support, and I don't know enough Python to fork and make pull requests. So I decided to take action and code my own backup solution using Node- with clearer logging to make troubleshooting easier.
 
 ### Differences
 
-- Uses Node (rather than Python).
-- Backups JSON and EDN (Skips markdown for now, as it has caused too many errors and timeouts)
-- better error debugging
+- Uses Node (rather than Python)
+- Supports EDN! And JSON (No Markdown support yet, as it has been causing too many errors and timeouts)
+- Better error debugging
+- Active support from the developer (Erik Newhard @everruler12) to get your backups running smoothly and error-free
 
 ### Instructions
 
@@ -18,11 +19,11 @@ https://github.com/everruler12/roam2github-demo
 
 ### Future Plans
 
-- [x] edn support
-- [ ] new, full guide for non-roam-to-git users
-- [ ] multiple graph backups in same repo
-- [ ] markdown support
-- [ ] any other ideas? Let me know!
+- [ ] New, full guide for non-roam-to-git users
+- [ ] Multiple graph backups in same repo
+- [ ] Markdown support
+- [ ] Any other features you want?
+- [x] EDN support
 
 ### EDN Backups are live!
 
@@ -32,7 +33,9 @@ The backup has a check to make sure the formatted EDN (which only adds extra lin
 
 ### Support / Donations
 
-If you experience any issues or errors with my backup script, let me know! Either post as a GitHub issue here, or send me a message at my support email: [erik@eriknewhard.com](mailto:erik@eriknewhard.com)
+**If you experience any issues or errors with my backup script, let me know!** Either post as a GitHub issue here, or send me a message at my support email:
+
+[erik@eriknewhard.com](mailto:erik@eriknewhard.com)
 
 ---
 
@@ -40,4 +43,4 @@ Some very generous people have been asking how to donate. If you like my work, I
 
 Email for PayPal and Amazon gift cards: [erik.newhard@gmail.com](erik.newhard@gmail.com)
 
-Bitcoin (BTC) address: bc1qsa3l8lraa3rjj6wyc7zdlv5z2xnlunppavtxw0
+Bitcoin (BTC) address: `bc1qsa3l8lraa3rjj6wyc7zdlv5z2xnlunppavtxw0`
