@@ -32,7 +32,7 @@ The backup has a check to make sure the formatted EDN (which only adds extra lin
 
 ### Support / Donations
 
-If you experience any issues or errors with my backup script, let me know! Either post as a GitHub issue here, or send me a message at my support email [erik@eriknewhard.com](mailto:erik@eriknewhard.com)
+If you experience any issues or errors with my backup script, let me know! Either post as a GitHub issue here, or send me a message at my support email: [erik@eriknewhard.com](mailto:erik@eriknewhard.com)
 
 ---
 
