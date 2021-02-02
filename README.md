@@ -36,7 +36,7 @@ The backup has a check to make sure the formatted EDN (which only adds extra lin
 
 ## Multi Graph Backups in Same Repo
 
-You can now backup multiple graphs without having to create a new GitHub repo. Just add them to your `R2G_GRAPH` Secret in separate lines, or separated by a comma.
+You can now backup multiple graphs without having to create a new GitHub repo. Just add them to your `R2G_GRAPH` Secret in separate lines, or separated by commas.
 
 ## Support / Donations
 
