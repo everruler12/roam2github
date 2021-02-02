@@ -2,7 +2,7 @@
 
 Inspired by https://github.com/MatthieuBizien/roam-to-git
 
-roam-to-git has offered great peace mind knowing my Roam data is safe. However, backups regularly failed with unknown errors multiple times a week. Then it got to the point on 2021-01-28 where all my backups were failing. The creator is not very active with support, and I don't know enough Python to fork and make pull requests. So I decided to take action and code my own backup solution using Node- with clearer logging to make troubleshooting easier.
+roam-to-git has offered great peace mind knowing my Roam data is safe. However, backups regularly failed with unknown errors multiple times a week. Then it got to the point on 2021-01-28 where all my backups were failing. The creator is not very active with support, and I don't know enough Python to fork and make pull requests. So I decided to code my own backup solution from scratch using Node— with clearer logging to make troubleshooting easier.
 
 ## Differences
 
