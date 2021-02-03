@@ -60,6 +60,8 @@ async function init() {
         // page.on('console', consoleObj => console.log(consoleObj.text())) // for console.log() to work in page.evaluate() https://stackoverflow.com/a/46245945
         // await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36'); // https://github.com/puppeteer/puppeteer/issues/1477#issuecomment-437568281
 
+        page.on("dialog", async (dialog) => await dialog.accept()) // Handle "Changes will not be saved" dialog when trying to navigate away from official Roam help database https://roamresearch.com/#/app/help
+
         log('Login')
         await roam_login(page)
 
