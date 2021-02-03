@@ -101,28 +101,26 @@ async function roam_login(page) {
             log('- Navigating to login page')
             await page.goto('https://roamresearch.com/#/signin')
 
-            const email_selector = 'input[name="email"]'
-
-            log('- Waiting for email field')
-            await page.waitForSelector(email_selector)
+            log('- Checking for email field')
+            await page.waitForSelector('input[name="email"]')
 
             log('- (Wait 10 seconds)')
             await page.waitForTimeout(10000) // because Roam auto refreshes the sign-in page, as mentioned here https://github.com/MatthieuBizien/roam-to-git/issues/87#issuecomment-763281895 (and can be seen in )
+            // seems to fix `R2G ERROR - Error: Protocol error (DOM.describeNode): Cannot find context with specified id`
 
             log('- Filling email field')
-            await page.type(email_selector, R2G_EMAIL)
+            await page.type('input[name="email"]', R2G_EMAIL)
 
             log('- Filling password field')
             await page.type('input[name="password"]', R2G_PASSWORD)
 
-            log('- Waiting for "Sign In" button')
-            const signin_button = await page.waitForXPath("//button[@class='bp3-button' and contains(., 'Sign In')]")
+            log('- Checking for "Sign In" button')
+            await page.waitForFunction(() => [...document.querySelectorAll('button.bp3-button')].find(button => button.innerText == 'Sign In'))
+            // const signin_button = await page.waitForXPath("//button[@class='bp3-button' and contains(., 'Sign In')]")
 
             log('- Clicking "Sign In"')
-            await signin_button.click()
-            // await page.evaluate(() => {
-            //     [...document.querySelectorAll('button')].find(button => button.innerText == 'Sign In').click()
-            // })
+            await page.evaluate(() => { [...document.querySelectorAll('button.bp3-button')].find(button => button.innerText == 'Sign In').click() })
+            // await signin_button.click()
 
             const login_error_selector = 'div[style="font-size: 12px; color: red;"]' // error message on login page
             const graphs_selector = '.my-graphs' // successful login, on graphs selection page
@@ -165,7 +163,7 @@ async function roam_open_graph(page, graph_name) {
             log('- Navigating to graph')
             await page.goto(`https://roamresearch.com/#/app/${graph_name}?disablecss=true&disablejs=true`)
 
-            // log('- Waiting for astrolabe spinner')
+            // log('- Checking for astrolabe spinner')
             await page.waitForSelector('.loading-astrolabe')
             log('- astrolabe spinning...')
 
@@ -178,6 +176,7 @@ async function roam_open_graph(page, graph_name) {
             //     await page.waitForSelector('.navbar') // Likely screen saying 'You do not have permission to view this database'
             //     reject()
             // }
+
             log('Graph loaded!')
             resolve()
 
@@ -189,52 +188,68 @@ async function roam_export(page, filetype, download_dir) {
     return new Promise(async (resolve, reject) => {
         try {
 
-            // log('- Waiting for "..." button', filetype)
+            // log('- Checking for "..." button', filetype)
             await page.waitForSelector('.bp3-icon-more')
 
             log('- Clicking "..." button')
             await page.click('.bp3-icon-more')
 
-            log('- Waiting for "Export All" option')
-            const exportAll_option = await page.waitForXPath("//div[@class='bp3-text-overflow-ellipsis bp3-fill' and contains(., 'Export All')]")
+            log('- Checking for "Export All" option')
+            await page.waitForFunction(() => [...document.querySelectorAll('li .bp3-fill')].find(li => li.innerText.match('Export All')))
+            // const exportAll_option = await page.waitForXPath("//div[@class='bp3-text-overflow-ellipsis bp3-fill' and contains(., 'Export All')]")
 
             log('- Clicking "Export All" option')
-            await exportAll_option.click()
+            await page.evaluate(() => { [...document.querySelectorAll('li .bp3-fill')].find(li => li.innerText.match('Export All')).click() })
+            // await exportAll_option.click()
 
             const chosen_format_selector = '.bp3-dialog .bp3-button-text'
 
-            log('- Waiting for export dialog')
+            log('- Checking for export dialog')
             await page.waitForSelector(chosen_format_selector)
 
-            const chosen_format = await page.$eval(chosen_format_selector, el => el.innerText)
+            const chosen_format = (await page.$eval(chosen_format_selector, el => el.innerText)).trim()
+            log(`- format chosen is "${chosen_format}"`)
 
             if (filetype != chosen_format) {
 
-                log('- Clicking Export Format')
-                await page.click(chosen_format_selector)
+                const dropdown_arrow = 'span.bp3-icon.bp3-icon-caret-down'
 
-                log('- Waiting for dropdown')
-                const dropdown_option = await page.waitForXPath(`//div[@class='bp3-text-overflow-ellipsis bp3-fill' and contains(., '${filetype}')]`)
-                // await page.waitForSelector('.bp3-text-overflow-ellipsis')
+                log('- Checking for dropdown arrow')
+                await page.waitForSelector(dropdown_arrow)
+                // const dropdown_button = await page.waitForXPath(`//span[@class='bp3-icon bp3-icon-caret-down']`)
+
+                // log('- (Wait 1 second)')
+                // await page.waitForTimeout(1000) // because sometimes gets timeout error here `Error: The operation was canceled.`
+
+                log('- Clicking export format')
+                await page.click(dropdown_arrow)
+                // await page.click(dropdown_button) // 2021-02-02 16:51:23.632 R2G ERROR - Error: JSHandles can be evaluated only in the context they were created!
+
+                // log('- (Wait 1 second)')
+                // await page.waitForTimeout(1000) // because sometimes gets timeout error here `Error: The operation was canceled.`
+
+                log('- Checking for dropdown options')
+                await page.waitForSelector('.bp3-text-overflow-ellipsis')
+
+                log('- Checking for dropdown option', filetype)
+                await page.waitForFunction((filetype) => [...document.querySelectorAll('.bp3-text-overflow-ellipsis')].find(dropdown => dropdown.innerText.match(filetype)), filetype)
+                // const dropdown_option = await page.waitForXPath(`//div[@class='bp3-text-overflow-ellipsis bp3-fill' and contains(., '${filetype}')]`)
 
                 log('- Clicking', filetype)
-                await dropdown_option.click()
-                // await page.evaluate((filetype) => {
-                //     [...document.querySelectorAll('.bp3-text-overflow-ellipsis')].find(dropdown => dropdown.innerText == filetype).click()
-                // }, filetype)
+                await page.evaluate((filetype) => { [...document.querySelectorAll('.bp3-text-overflow-ellipsis')].find(dropdown => dropdown.innerText.match(filetype)).click() }, filetype)
+                // await dropdown_option.click()
 
             } else {
                 log('-', filetype, 'already selected')
             }
 
-            log('- Waiting for "Export All" button')
-            const exportAll_button = await page.waitForXPath("//button[@class='bp3-button bp3-intent-primary' and contains(., 'Export All')]")
+            log('- Checking for "Export All" button')
+            await page.waitForFunction(() => document.querySelector('button.bp3-button.bp3-intent-primary').innerText == 'Export All')
+            // const exportAll_button = await page.waitForXPath("//button[@class='bp3-button bp3-intent-primary' and contains(., 'Export All')]")
 
             log('- Clicking "Export All" button')
-            await exportAll_button.click()
-            // await page.evaluate(() => {
-            //     [...document.querySelectorAll('button')].find(button => button.innerText == 'Export All').click()
-            // })
+            await page.evaluate(() => { document.querySelector('button.bp3-button.bp3-intent-primary').click() })
+            // await exportAll_button.click()
 
             log('- Waiting for download to start')
             await page.waitForSelector('.bp3-spinner')
