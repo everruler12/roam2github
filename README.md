@@ -79,13 +79,13 @@ In your main.yml, beneath the `R2G_GRAPH` env variable, you can add some of the 
 - Change the replacement character for illegal filenames in markdown. Default is `�` for no setting.
 
     ```
-    REPLACEMENT: _
+    MD_REPLACEMENT: _
     ```
 
 - Include blank markdown files. (This can clutter the backup with lots of unnecessary files.) Default is true (skip the blanks) for no setting.
 
     ```
-    SKIP_BLANKS: false
+    MD_SKIP_BLANKS: false
     ```
 
 ## Support / Donations

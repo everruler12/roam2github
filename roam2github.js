@@ -21,7 +21,7 @@ try {
 const tmp_dir = path.join(__dirname, 'tmp')
 const backup_dir = IS_LOCAL ? path.join(__dirname, 'backup') : getRepoPath()
 
-const { R2G_EMAIL, R2G_PASSWORD, R2G_GRAPH, BACKUP_JSON, BACKUP_EDN, BACKUP_MARKDOWN, REPLACEMENT, SKIP_BLANKS, TIMEOUT } = process.env
+const { R2G_EMAIL, R2G_PASSWORD, R2G_GRAPH, BACKUP_JSON, BACKUP_EDN, BACKUP_MARKDOWN, MD_REPLACEMENT, MD_SKIP_BLANKS, TIMEOUT } = process.env
 
 if (!R2G_EMAIL) error('Secrets error: R2G_EMAIL not found')
 if (!R2G_PASSWORD) error('Secrets error: R2G_PASSWORD not found')
@@ -41,7 +41,7 @@ const filetypes = [
     return f
 })
 
-const skip_blanks = (SKIP_BLANKS && SKIP_BLANKS.toLowerCase()) === 'false' ? false : true
+const skip_blanks = (MD_SKIP_BLANKS && MD_SKIP_BLANKS.toLowerCase()) === 'false' ? false : true
 
 // what about specifying filetype for each graph? Maybe use settings.json in root of repo. But too complicated for non-programmers to set up.
 
@@ -440,7 +440,7 @@ function censor(graph_name) {
 function sanitizeFileName(fileName) {
     fileName = fileName.replace(/\//g, '／')
 
-    const sanitized = sanitize(fileName, { replacement: REPLACEMENT || '�' })
+    const sanitized = sanitize(fileName, { replacement: MD_REPLACEMENT || '�' })
 
     if (sanitized != fileName) {
 
