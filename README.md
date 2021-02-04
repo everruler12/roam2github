@@ -35,7 +35,7 @@ The backup will run every hour. You can view the logs in Actions and clicking on
 
 ## Markdown support added
 
-2021-02-04 Markdown is now supported. Worked all day to get filename sanitization working. My backup script can even export markdown from the [official Roam help database](https://roamresearch.com/#/app/help) error-free! I have added several measures to prevent errors:
+2021-02-04 Markdown is now supported. Worked all day to get filename sanitization working. My backup script can even export markdown from the [official Roam help database](https://roamresearch.com/#/app/help) and Roam [book](https://roamresearch.com/#/app/roam-book-club) [clubs](https://roamresearch.com/#/app/roam-book-club-2) error-free! I have added several measures to prevent errors:
 
 - `/` slashes are replaced with full-width versions `／`
 - illegal filename characters are replaced with `�`
