@@ -29,6 +29,8 @@ The backup will run every hour. You can view the logs in Actions and clicking on
 ## Future Plans
 
 - [ ] New, full guide with step-by-step screen recordings
+- [ ] Update code to run asynchronously, instead of linearly, to cut down on run time
+- [ ] Use fipp for faster EDN formatting
 - [x] EDN support (2021-01-31)
 - [x] Multi graph support (2021-02-01)
 - [x] Markdown support (2021-02-04)
