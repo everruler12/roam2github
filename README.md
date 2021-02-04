@@ -45,6 +45,8 @@ The backup will run every hour. You can view the logs in Actions and clicking on
 
 Unfortunate side-effect with markdown backups: files with duplicate names are overwritten (like [[test]] and [[Test]]). (This was also present in roam-to-git)
 
+- [ ] Need to skip markdown files that are empty
+
 ## Multi Graph Backups in Same Repo
 
 You can now backup multiple graphs without having to create a new GitHub repo for each one. Just add them to your `R2G_GRAPH` Secret in separate lines, or separated by commas.
