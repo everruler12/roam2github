@@ -86,6 +86,7 @@ async function init() {
                     log('Export', f.type)
                     await roam_export(page, f.type, download_dir, graph_name)
 
+                    await format_and_save(f.type, download_dir, graph_name)
                     // TODO run download and formatting operations asynchronously. Can be done since json and edn are same as graph name.
                     // Await for counter expecting total operations to be done graph_names.length * filetypes.filter(f=>f.backup).length
                     // or Promises.all(arr) where arr is initiated outside For loop, and arr.push result of format_and)_save
@@ -327,17 +328,17 @@ async function extract_file(file, download_dir, filetype, graph_name) {
                 }
             })
 
-            await format_and_save(extract_dir, filetype, graph_name)
-
             resolve()
 
         } catch (err) { reject(err) }
     })
 }
 
-async function format_and_save(extract_dir, filetype, graph_name) {
+async function format_and_save(filetype, download_dir, graph_name) {
     return new Promise(async (resolve, reject) => {
         try {
+
+            const extract_dir = path.join(download_dir, '_extraction')
 
             const files = await fs.readdir(extract_dir)
 
@@ -345,12 +346,18 @@ async function format_and_save(extract_dir, filetype, graph_name) {
 
             if (filetype == 'Markdown') {
 
+
+                const markdown_dir = path.join(backup_dir, 'markdown', graph_name)
+
+                // log('- Removing old markdown directory')
+                await fs.remove(markdown_dir, { recursive: true }) // necessary, to update renamed pages
+
                 log('- Saving Markdown')
 
                 for (const file of files) {
 
                     const file_fullpath = path.join(extract_dir, file)
-                    const new_file_fullpath = path.join(backup_dir, 'markdown', graph_name, file)
+                    const new_file_fullpath = path.join(markdown_dir, file)
 
                     await fs.move(file_fullpath, new_file_fullpath, { overwrite: true })
                 }
