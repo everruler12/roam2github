@@ -19,7 +19,7 @@ Roam-to-git has offered me great peace of mind knowing my Roam data is safe. How
     - `R2G_PASSWORD` - Your Roam account password (needs to be reset if using a Google login)
     - `R2G_GRAPH` - The name of the graph to backup. For multiple graphs, add on separate lines (or separate by commas)
 3. Go to Actions, then click "set up a workflow yourself →"
-4. Delete the code in the editor, and copy/paste the code from [here](https://raw.githubusercontent.com/everruler12/roam2github-demo/main/.github/workflows/main.yml)
+4. Delete the code in the editor, and copy/paste the code from here: [main.yml](https://raw.githubusercontent.com/everruler12/roam2github-demo/main/.github/workflows/main.yml)
 5. Click `Start Commit` then `Commit new file`
 
 The backup will run every hour. You can view the logs in Actions and clicking on the jobs.
