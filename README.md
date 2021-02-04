@@ -41,7 +41,7 @@ The backup will run every hour. You can view the logs in Actions and clicking on
 - no subdirectories
 - The logs will list the files that have been renamed or overwritten.
 
-Unfortunate side-effectwith markdown backups (which was also present in roam-to-git): files with duplicate names are overwritten (like [[test]] and [[Test]]).
+Unfortunate side-effect with markdown backups: files with duplicate names are overwritten (like [[test]] and [[Test]]). (This was also present in roam-to-git)
 
 ## Multi Graph Backups in Same Repo
 
