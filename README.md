@@ -4,29 +4,32 @@ Inspired by https://github.com/MatthieuBizien/roam-to-git
 
 roam-to-git has offered great peace mind knowing my Roam data is safe. However, backups regularly failed with unknown errors multiple times a week. Then it got to the point on 2021-01-28 where all my backups were failing. The creator is not very active with support, and I don't know enough Python to fork and make pull requests. So I decided to code my own backup solution from scratch using Node— with clearer logging to make troubleshooting easier.
 
-## Differences
+## Differences from roam-to-git
 
 - Uses Node (rather than Python)
-- Supports EDN! And JSON (No Markdown support yet, as it has been causing too many errors and timeouts)
-- Multiple graph backups in same repo
-- Better error debugging
-- Active support from the developer (Erik Newhard @everruler12) to get your backups running smoothly and error-free
+- Supports EDN in addition to JSON and Markdown (not formatted markdown though)
+- Multiple graph backups in the same repo
+- Better error debugging and active support from the developer (Erik Newhard @everruler12) to get your backups running smoothly and error-free
 
 ## Instructions
 
-Assuming you're coming from roam-to-git and have followed my [guide](https://eriknewhard.com/blog/backup-roam-in-github), you can find simple instructions on how to update your Secrets and main.yml here:
+1. Create a new, private repository
+2. Go to Settings > Secrets and add the following Secret names and values:
+    - `R2G_EMAIL` - Your Roam account email
+    - `R2G_PASSWORD` - Your Roam account password (needs to be reset if using a Google login)
+    - `R2G_GRAPH` - The name of the graph to backup. For multiple graphs, add on separate lines (or separate by commas)
+3. Go to Actions, then click "set up a workflow yourself →"
+4. Delete the code in the editor, and copy/paste the code from [here](https://raw.githubusercontent.com/everruler12/roam2github-demo/main/.github/workflows/main.yml)
+5. Click `Start Commit` then `Commit new file`
 
-### https://github.com/everruler12/roam2github-demo
-
-The README at the above link also has a list of some common error messages and how to fix them.
+The backup will run every hour. You can view the logs in Actions and clicking on the jobs.
 
 ## Future Plans
 
-- [ ] New, full guide for non-roam-to-git users
-- [ ] Markdown support
-- [ ] Any other features you want?
+- [ ] New, full guide with step-by-step screen recordings
 - [x] EDN support (2021-01-31)
 - [x] Multi graph support (2021-02-01)
+- [x] Markdown support (2021-02-04)
 
 ## EDN Backups are live!
 
@@ -37,6 +40,17 @@ The backup has a check to make sure the formatted EDN (which only adds extra lin
 ## Multi Graph Backups in Same Repo
 
 You can now backup multiple graphs without having to create a new GitHub repo for each one. Just add them to your `R2G_GRAPH` Secret in separate lines, or separated by commas.
+
+## Markdown support added
+
+2021-02-04 Markdown is now supported. Worked all day to get filename sanitization working. My backup script can even export markdown from the [official Roam help database](https://roamresearch.com/#/app/help) error-free! I have added several measures to prevent errors:
+
+- `/` slashes are replaced with full-width versions `／`
+- illegal filename characters are replaced with `�`
+- no subdirectories
+- The logs will show which files have been renamed and overwritten.
+
+Unfortunate side-effect (which was also present in roam-to-git): files with duplicate names are overwritten (like [[test]] and [[Test]]). 
 
 ## Support / Donations
 
