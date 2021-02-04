@@ -5,9 +5,11 @@
   "main": "roam2github.js",
   "dependencies": {
     "dotenv": "^8.2.0",
-    "extract-zip": "^2.0.1",
+    "edn-formatter": "everruler12/edn-formatter",
+    "extract-zip": "everruler12/extract-zip#modified",
     "fs-extra": "^9.1.0",
-    "puppeteer": "^5.5.0"
+    "puppeteer": "^5.5.0",
+    "sanitize-filename": "^1.6.3"
   },
   "devDependencies": {},
   "scripts": {
