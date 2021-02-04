@@ -55,6 +55,30 @@ The backup has a check to make sure the formatted EDN (which only adds extra lin
 
 2021-01-31 It took all day to figure out how to use ClojureScript to prettify EDN. It was a daunting task, never having dealt with Clojure before, much less compiling it into JavaScript. But I did it! This is necessary because the exported EDN data from Roam is all in one line, meaning GitHub would have to save the entire file each time, instead of just the new lines. This would eat up the storage pretty quickly if run every hour, as unchanged notes would be duplicated each time. And you wouldn't be able to see line-by-line changes in the git history.
 
+## Extra options
+
+In your main.yml, beneath the `R2G_GRAPH` env variable, you can add some of the following settings:
+
+- Don't backup a specific file type. (Choose one or two to skip. Not all 3, or you won't have a backup, lol). Default is true for no setting.
+
+    ```
+    BACKUP_JSON: false
+    BACKUP_EDN: false
+    BACKUP_MARKDOWN: false
+    ```
+    
+- Change timeout in the backup script (not the Action itself). Default is 600000 ms (or 10 minutes) for no setting.
+
+    ```
+    TIMEOUT: 300000
+    ```
+    
+- Change the replacement character for illegal filenames in markdown. Default is `�` for no setting.
+
+    ```
+    REPLACEMENT: _
+    ```
+
 ## Support / Donations
 
 **If you experience any issues or errors with my backup script, let me know!** Either post as a GitHub issue here, or send me a message at my support email:
