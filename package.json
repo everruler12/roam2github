@@ -1,12 +1,12 @@
 {
   "name": "roam2github",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Automatic Roam Research backups",
   "main": "roam2github.js",
   "dependencies": {
     "dotenv": "^8.2.0",
     "edn-formatter": "everruler12/edn-formatter",
-    "extract-zip": "everruler12/extract-zip#modified",
+    "extract-zip": "everruler12/extract-zip",
     "fs-extra": "^9.1.0",
     "puppeteer": "^5.5.0",
     "sanitize-filename": "^1.6.3"

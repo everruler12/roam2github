@@ -21,11 +21,16 @@ try {
 const tmp_dir = path.join(__dirname, 'tmp')
 const backup_dir = IS_LOCAL ? path.join(__dirname, 'backup') : getRepoPath()
 
-const { R2G_EMAIL, R2G_PASSWORD, R2G_GRAPH, BACKUP_JSON, BACKUP_EDN, BACKUP_MARKDOWN, REPLACEMENT, TIMEOUT } = process.env
+const { R2G_EMAIL, R2G_PASSWORD, R2G_GRAPH, BACKUP_JSON, BACKUP_EDN, BACKUP_MARKDOWN, REPLACEMENT, SKIP_BLANKS, TIMEOUT } = process.env
 
 if (!R2G_EMAIL) error('Secrets error: R2G_EMAIL not found')
 if (!R2G_PASSWORD) error('Secrets error: R2G_PASSWORD not found')
-if (!R2G_GRAPH) error('Secrets error: R2G_GRAPH not found') // can also check "Not a valid name. Names can only contain letters, numbers, dashes and underscores."
+if (!R2G_GRAPH) error('Secrets error: R2G_GRAPH not found')
+
+const graph_names = R2G_GRAPH.split(/,|\n/)  // comma or linebreak separator
+    .map(g => g.trim())// remove extra spaces
+    .filter(g => g != '') // remove blank lines
+// can also check "Not a valid name. Names can only contain letters, numbers, dashes and underscores." message that Roam gives when creating a new graph
 
 const filetypes = [
     { type: "JSON", backup: BACKUP_JSON },
@@ -35,6 +40,9 @@ const filetypes = [
     (f.backup === undefined || f.backup.toLowerCase() === 'true') ? f.backup = true : f.backup = false
     return f
 })
+
+const skip_blanks = (SKIP_BLANKS && SKIP_BLANKS.toLowerCase()) === 'false' ? false : true
+
 // what about specifying filetype for each graph? Maybe use settings.json in root of repo. But too complicated for non-programmers to set up.
 
 function getRepoPath() {
@@ -58,18 +66,17 @@ async function init() {
         const page = await browser.newPage()
         page.setDefaultTimeout(TIMEOUT || 600000) // 10min default
         // page.on('console', consoleObj => console.log(consoleObj.text())) // for console.log() to work in page.evaluate() https://stackoverflow.com/a/46245945
-        // await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3419.0 Safari/537.36'); // https://github.com/puppeteer/puppeteer/issues/1477#issuecomment-437568281
 
-        page.on("dialog", async (dialog) => await dialog.accept()) // Handle "Changes will not be saved" dialog when trying to navigate away from official Roam help database https://roamresearch.com/#/app/help
+        page.on("dialog", async (dialog) => await dialog.accept()) // Handles "Changes will not be saved" dialog when trying to navigate away from official Roam help database https://roamresearch.com/#/app/help
 
         log('Login')
         await roam_login(page)
 
-        for (const g of R2G_GRAPH.split(/,|\n/)) { // comma or linebreak separator
-            const graph_name = g.trim() // TODO handle if graph_name is blank
+        for (const graph_name of graph_names) {
 
             log('Open graph', censor(graph_name))
             await roam_open_graph(page, graph_name)
+            // TODO move const page = await browser.newPage() and page settings within roam_open_graph() - This will do away with 404 workaround, and allow downloading concurrently
 
             for (const f of filetypes) {
                 if (f.backup) {
@@ -79,7 +86,9 @@ async function init() {
                     log('Export', f.type)
                     await roam_export(page, f.type, download_dir, graph_name)
 
-                    // TODO run download and formatting operations asynchronously
+                    // TODO run download and formatting operations asynchronously. Can be done since json and edn are same as graph name.
+                    // Await for counter expecting total operations to be done graph_names.length * filetypes.filter(f=>f.backup).length
+                    // or Promises.all(arr) where arr is initiated outside For loop, and arr.push result of format_and)_save
                 }
             }
         }
@@ -294,6 +303,16 @@ async function extract_file(file, download_dir, filetype, graph_name) {
                 dir: extract_dir,
 
                 onEntry(entry, zipfile) {
+                    if (entry.fileName.endsWith('/')) {
+                        // log('  - Skipping subdirectory', entry.fileName)
+                        return false
+                    }
+
+                    if (skip_blanks && entry.uncompressedSize <= 3) { // files with 3 bytes just have a one blank block (like blank daily notes)
+                        // log('  - Skipping blank file', entry.fileName, `(${entry.uncompressedSize} bytes`)
+                        return false
+                    }
+
                     // log('  -', entry.fileName)
                     entry.fileName = sanitizeFileName(entry.fileName)
 
@@ -301,8 +320,10 @@ async function extract_file(file, download_dir, filetype, graph_name) {
 
                         log('WARNING: file collision detected. Overwriting file with (sanitized) name:', entry.fileName)
                         // reject(`Extraction error: file collision detected with sanitized filename: ${entry.fileName}`)
-                        // renaming to...
+                        // TODO? renaming to...
                     }
+
+                    return true
                 }
             })
 
@@ -410,7 +431,9 @@ function censor(graph_name) {
 }
 
 function sanitizeFileName(fileName) {
-    const sanitized = sanitize(fileName.replace(/\//g, '／'), { replacement: REPLACEMENT || '�' })
+    fileName = fileName.replace(/\//g, '／')
+
+    const sanitized = sanitize(fileName, { replacement: REPLACEMENT || '�' })
 
     if (sanitized != fileName) {
 
