@@ -43,11 +43,10 @@ The backup will run every hour. You can view the logs in Actions and clicking on
 - illegal filename characters are replaced with `�`
 - Page titles longer than 255 characters are automatically truncated (though they lose the .md extension)
 - no subdirectories
+- no blank files
 - The logs will list the files that have been renamed or overwritten.
 
 Unfortunate side-effect with markdown backups: files with duplicate names are overwritten (like [[test]] and [[Test]]). (This was also present in roam-to-git)
-
-- [ ] Need to skip markdown files that are empty
 
 ## Multi Graph Backups in Same Repo
 
