@@ -24,6 +24,8 @@ Roam-to-git has offered me great peace of mind knowing my Roam data is safe. How
 
 The backup will run every hour. You can view the logs in Actions and clicking on the jobs.
 
+### [Click here for a list of common error causes and their solutions](https://github.com/everruler12/roam2github-demo#common-error-causes)
+
 ## Future Plans
 
 - [ ] New, full guide with step-by-step screen recordings
