@@ -2,8 +2,8 @@ const path = require('path')
 const fs = require('fs-extra')
 const puppeteer = require('puppeteer')
 const extract = require('extract-zip')
-
-const edn_formatter = require('./edn_formatter.js').edn_formatter.core
+const sanitize = require('sanitize-filename')
+const edn_format = require('edn-formatter').edn_formatter.core.format
 
 console.time('R2G Exit after')
 
@@ -18,20 +18,19 @@ try {
         IS_LOCAL = false
     }
 } catch (err) { error(`.env file existence error: ${err}`) }
-
 const tmp_dir = path.join(__dirname, 'tmp')
 const backup_dir = IS_LOCAL ? path.join(__dirname, 'backup') : getRepoPath()
 
-const { R2G_EMAIL, R2G_PASSWORD, R2G_GRAPH, TIMEOUT, BACKUP_JSON, BACKUP_EDN, BACKUP_MARKDOWN } = process.env
+const { R2G_EMAIL, R2G_PASSWORD, R2G_GRAPH, BACKUP_JSON, BACKUP_EDN, BACKUP_MARKDOWN, REPLACEMENT, TIMEOUT } = process.env
 
 if (!R2G_EMAIL) error('Secrets error: R2G_EMAIL not found')
 if (!R2G_PASSWORD) error('Secrets error: R2G_PASSWORD not found')
 if (!R2G_GRAPH) error('Secrets error: R2G_GRAPH not found') // can also check "Not a valid name. Names can only contain letters, numbers, dashes and underscores."
 
 const filetypes = [
-    { type: "JSON", backup: BACKUP_JSON, ext: "json" },
-    { type: "EDN", backup: BACKUP_EDN, ext: "edn" },
-    // { type: "Markdown", backup: BACKUP_MARKDOWN, ext: "md" } // not supported yet
+    { type: "JSON", backup: BACKUP_JSON },
+    { type: "EDN", backup: BACKUP_EDN },
+    { type: "Markdown", backup: BACKUP_MARKDOWN }
 ].map(f => {
     (f.backup === undefined || f.backup === 'true') ? f.backup = true : f.backup = false
     return f
@@ -49,6 +48,7 @@ init()
 
 async function init() {
     try {
+
         await fs.remove(tmp_dir, { recursive: true })
 
         log('Create browser')
@@ -73,11 +73,11 @@ async function init() {
 
             for (const f of filetypes) {
                 if (f.backup) {
-                    const download_dir = path.join(tmp_dir, graph_name, f.ext)
+                    const download_dir = path.join(tmp_dir, graph_name, f.type.toLowerCase())
                     await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: download_dir })
 
                     log('Export', f.type)
-                    await roam_export(page, f.type, download_dir)
+                    await roam_export(page, f.type, download_dir, graph_name)
 
                     // TODO run download and formatting operations asynchronously
                 }
@@ -153,6 +153,8 @@ async function roam_open_graph(page, graph_name) {
     return new Promise(async (resolve, reject) => {
         try {
 
+            // TODO open new page instead, so run cocurrently
+
             log('- (Wait 1 second)')
             await page.waitForTimeout(1000) // to prevent `R2G ERROR - Error: net::ERR_ABORTED at https://roamresearch.com/404`
 
@@ -186,7 +188,7 @@ async function roam_open_graph(page, graph_name) {
     })
 }
 
-async function roam_export(page, filetype, download_dir) {
+async function roam_export(page, filetype, download_dir, graph_name) {
     return new Promise(async (resolve, reject) => {
         try {
 
@@ -220,15 +222,9 @@ async function roam_export(page, filetype, download_dir) {
                 await page.waitForSelector(dropdown_arrow)
                 // const dropdown_button = await page.waitForXPath(`//span[@class='bp3-icon bp3-icon-caret-down']`)
 
-                // log('- (Wait 1 second)')
-                // await page.waitForTimeout(1000) // because sometimes gets timeout error here `Error: The operation was canceled.`
-
                 log('- Clicking export format')
                 await page.click(dropdown_arrow)
                 // await page.click(dropdown_button) // 2021-02-02 16:51:23.632 R2G ERROR - Error: JSHandles can be evaluated only in the context they were created!
-
-                // log('- (Wait 1 second)')
-                // await page.waitForTimeout(1000) // because sometimes gets timeout error here `Error: The operation was canceled.`
 
                 log('- Checking for dropdown options')
                 await page.waitForSelector('.bp3-text-overflow-ellipsis')
@@ -263,7 +259,6 @@ async function roam_export(page, filetype, download_dir) {
 
 
             async function checkDownloads() {
-                // TODO handle: Unhandled promise rejection (unknown variable like 'filetype' used instead of log(files[0],...), or when not passing download_dir in the loop to fs.readdir)
                 try {
 
                     const files = await fs.readdir(download_dir)
@@ -273,15 +268,7 @@ async function roam_export(page, filetype, download_dir) {
 
                         log(file, 'downloaded!')
 
-                        // await extract_zips(download_dir)
-
-                        const file_fullpath = path.join(download_dir, file) // NEEDS sanitized for Markdown
-                        const extract_dir = path.join(download_dir, '_extraction')
-
-                        log('- Extracting ' + file)
-                        await extract(file_fullpath, { dir: extract_dir })
-
-                        await format_and_save(extract_dir)
+                        await extract_file(file, download_dir, filetype, graph_name)
 
                         resolve()
 
@@ -289,44 +276,45 @@ async function roam_export(page, filetype, download_dir) {
 
                 } catch (err) { reject(err) }
             }
-
-
             checkDownloads()
-
 
         } catch (err) { reject(err) }
     })
 }
 
+async function extract_file(file, download_dir, filetype, graph_name) {
+    return new Promise(async (resolve, reject) => {
+        try {
 
+            const file_fullpath = path.join(download_dir, file)
+            const extract_dir = path.join(download_dir, '_extraction')
 
-// async function extract_zips(download_dir) {
-//     const extract_dir = path.join(download_dir, '_extraction')
-//     return new Promise(async (resolve, reject) => {
-//         try {
+            log('- Extracting ' + file)
+            await extract(file_fullpath, {
+                dir: extract_dir,
 
-//             const files = await fs.readdir(download_dir)
+                onEntry(entry, zipfile) {
+                    // log('  -', entry.fileName)
+                    entry.fileName = sanitizeFileName(entry.fileName)
 
-//             if (files.length === 0) reject('Extraction error: download_dir is empty')
+                    if (fs.pathExistsSync(path.join(extract_dir, entry.fileName))) {
 
-//             for (const file of files) {
-//                 const file_fullpath = path.join(download_dir, file) // NEEDS sanitized
+                        log('WARNING: file collision detected. Overwriting file with (sanitized) name:', entry.fileName)
+                        // reject(`Extraction error: file collision detected with sanitized filename: ${entry.fileName}`)
+                        // renaming to...
+                    }
+                }
+            })
 
-//                 log('- Extracting ' + file)
-//                 await extract(file_fullpath, { dir: extract_dir })
-//                 // log('Extraction complete')
-//             }
+            await format_and_save(extract_dir, filetype, graph_name)
 
-//             await format_and_save(extract_dir)
+            resolve()
 
-//             resolve()
+        } catch (err) { reject(err) }
+    })
+}
 
-//         } catch (err) { reject(err) }
-//     })
-// }
-
-// TODO join this with extraction
-async function format_and_save(extract_dir) {
+async function format_and_save(extract_dir, filetype, graph_name) {
     return new Promise(async (resolve, reject) => {
         try {
 
@@ -334,7 +322,22 @@ async function format_and_save(extract_dir) {
 
             if (files.length === 0) reject('Extraction error: extract_dir is empty')
 
-            for (const file of files) {
+            if (filetype == 'Markdown') {
+
+                log('- Saving Markdown')
+
+                for (const file of files) {
+
+                    const file_fullpath = path.join(extract_dir, file)
+                    const new_file_fullpath = path.join(backup_dir, 'markdown', graph_name, file)
+
+                    await fs.move(file_fullpath, new_file_fullpath, { overwrite: true })
+                }
+
+            } else {
+
+                // for (const file of files) {
+                const file = files[0]
                 const file_fullpath = path.join(extract_dir, file)
                 const fileext = file.split('.').pop()
                 const new_file_fullpath = path.join(backup_dir, fileext, file)
@@ -346,7 +349,7 @@ async function format_and_save(extract_dir) {
                     const new_json = JSON.stringify(json, null, 2)
 
                     log('- Saving formatted JSON')
-                    fs.outputFile(new_file_fullpath, new_json)
+                    await fs.outputFile(new_file_fullpath, new_json)
 
                 } else if (fileext == 'edn') {
 
@@ -354,12 +357,14 @@ async function format_and_save(extract_dir) {
                     const edn = await fs.readFile(file_fullpath, 'utf-8')
 
                     const edn_prefix = '#datascript/DB '
-                    var new_edn = edn_prefix + edn_formatter.format(edn.replace(new RegExp('^' + edn_prefix), ''))
+                    var new_edn = edn_prefix + edn_format(edn.replace(new RegExp('^' + edn_prefix), ''))
                     checkFormattedEDN(edn, new_edn)
 
                     log('- Saving formatted EDN')
-                    fs.outputFile(new_file_fullpath, new_edn)
-                }
+                    await fs.outputFile(new_file_fullpath, new_edn)
+
+                } else reject(`format_and_save error: Unhandled filetype: ${fileext}`)
+                // }
             }
 
             resolve()
@@ -402,4 +407,15 @@ function censor(graph_name) {
         if (i != 0 && i != graph_name.length - 1 && char != '-' && char != '_') return '*' // don't censor first letter, last letter, hyphens, and underscores
         else return char
     }).join('')
+}
+
+function sanitizeFileName(fileName) {
+    const sanitized = sanitize(fileName.replace(/\//g, '／'), { replacement: REPLACEMENT || '�' })
+
+    if (sanitized != fileName) {
+
+        log('    Sanitized:', fileName, '\n                                       to:', sanitized)
+        return sanitized
+
+    } else return fileName
 }
