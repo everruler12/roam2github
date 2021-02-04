@@ -32,7 +32,7 @@ const filetypes = [
     { type: "EDN", backup: BACKUP_EDN },
     { type: "Markdown", backup: BACKUP_MARKDOWN }
 ].map(f => {
-    (f.backup === undefined || f.backup === 'true') ? f.backup = true : f.backup = false
+    (f.backup === undefined || f.backup.toLowerCase() === 'true') ? f.backup = true : f.backup = false
     return f
 })
 // what about specifying filetype for each graph? Maybe use settings.json in root of repo. But too complicated for non-programmers to set up.
