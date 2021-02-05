@@ -69,13 +69,13 @@ In your main.yml, beneath the `R2G_GRAPH` env variable, you can add some of the 
     BACKUP_EDN: false
     BACKUP_MARKDOWN: false
     ```
-    
+
 - Change timeout in the backup script (not the Action itself). Default is `600000` ms (10 minutes) when not set.
 
     ```
     TIMEOUT: 300000
     ```
-    
+
 - Change the replacement character for illegal filenames in markdown. Default is `�` when not set.
 
     ```
