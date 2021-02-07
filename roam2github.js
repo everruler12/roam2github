@@ -226,15 +226,16 @@ async function roam_export(page, filetype, download_dir, graph_name) {
 
             if (filetype != chosen_format) {
 
-                const dropdown_arrow = 'span.bp3-icon.bp3-icon-caret-down'
+                // const dropdown_arrow = 'span.bp3-icon.bp3-icon-caret-down'
 
-                log('- Checking for dropdown arrow')
-                await page.waitForSelector(dropdown_arrow)
+                // log('- Checking for dropdown arrow')
+                // await page.waitForSelector(dropdown_arrow)
                 // const dropdown_button = await page.waitForXPath(`//span[@class='bp3-icon bp3-icon-caret-down']`)
 
                 log('- Clicking export format')
-                await page.click(dropdown_arrow)
+                // await page.click(dropdown_arrow)
                 // await page.click(dropdown_button) // 2021-02-02 16:51:23.632 R2G ERROR - Error: JSHandles can be evaluated only in the context they were created!
+                await page.click(chosen_format_selector)
 
                 log('- Checking for dropdown options')
                 await page.waitForSelector('.bp3-text-overflow-ellipsis')
