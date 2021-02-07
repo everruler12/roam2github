@@ -209,8 +209,10 @@ async function roam_export(page, filetype, download_dir, graph_name) {
             await page.waitForTimeout(1000)
 
             if (await page.$('.rm-quick-capture-sync-modal')) {
+                log('- Detected "Sync Quick Capture Notes" modal. Closing')
                 await page.keyboard.press('Escape')
                 await page.waitForSelector('.rm-quick-capture-sync-modal', { hidden: true })
+                log('- "Sync Quick Capture Notes" modal closed')
             }
 
             log('- Clicking "..." button')
