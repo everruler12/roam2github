@@ -205,6 +205,14 @@ async function roam_export(page, filetype, download_dir, graph_name) {
             // log('- Checking for "..." button', filetype)
             await page.waitForSelector('.bp3-icon-more')
 
+            log('- (Wait 1 second)') // to check for Sync Quick Capture Notes with Workspace modal
+            await page.waitForTimeout(1000)
+
+            if (await page.$('.rm-quick-capture-sync-modal')) {
+                await page.keyboard.press('Escape')
+                await page.waitForSelector('.rm-quick-capture-sync-modal', { hidden: true })
+            }
+
             log('- Clicking "..." button')
             await page.click('.bp3-icon-more')
 
