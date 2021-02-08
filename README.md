@@ -13,8 +13,6 @@ Roam-to-git has offered me great peace of mind knowing my Roam data is safe. How
 - Multiple graph backups in the same repo
 - Better error debugging and active support from the developer (Erik Newhard @everruler12) to get your backups running smoothly and error-free
 
-### [Click here for a list of common error causes and their solutions](https://github.com/everruler12/roam2github/blob/main/documentation/Common%20error%20causes.md)
-
 ## Future Plans
 
 - [ ] New, full guide with step-by-step screen recordings
@@ -23,6 +21,16 @@ Roam-to-git has offered me great peace of mind knowing my Roam data is safe. How
 - [x] EDN support (2021-01-31)
 - [x] Multi graph support (2021-02-01)
 - [x] Markdown support (2021-02-04)
+
+## EDN Backups are live!
+
+The backup has a check to make sure the formatted EDN (which only adds extra linebreaks and indentation) can be parsed back to match exactly with the original before saving it. It will exit with an error if it can't, so you can rest assured that the formatting doesn't mess with the file integrity. I also tested that the formatted EDN can be used to successfully restore graphs.
+
+2021-01-31 It took all day to figure out how to use ClojureScript to prettify EDN. It was a daunting task, never having dealt with Clojure before, much less compiling it into JavaScript. But I did it! This is necessary because the exported EDN data from Roam is all in one line, meaning GitHub would have to save the entire file each time, instead of just the new lines. This would eat up the storage pretty quickly if run every hour, as unchanged notes would be duplicated each time. And you wouldn't be able to see line-by-line changes in the git history.
+
+## Multi Graph Backups in Same Repo
+
+You can now backup multiple graphs without having to create a new GitHub repo for each one. Just add them to your `R2G_GRAPH` Secret in separate lines, or separated by commas.
 
 ## Markdown support added
 
@@ -37,21 +45,13 @@ Roam-to-git has offered me great peace of mind knowing my Roam data is safe. How
 
 Unfortunate side-effect with markdown backups: files with duplicate names are overwritten (like [[test]] and [[Test]]). (This was also present in roam-to-git)
 
-## Multi Graph Backups in Same Repo
-
-You can now backup multiple graphs without having to create a new GitHub repo for each one. Just add them to your `R2G_GRAPH` Secret in separate lines, or separated by commas.
-
-## EDN Backups are live!
-
-The backup has a check to make sure the formatted EDN (which only adds extra linebreaks and indentation) can be parsed back to match exactly with the original before saving it. It will exit with an error if it can't, so you can rest assured that the formatting doesn't mess with the file integrity. I also tested that the formatted EDN can be used to successfully restore graphs.
-
-2021-01-31 It took all day to figure out how to use ClojureScript to prettify EDN. It was a daunting task, never having dealt with Clojure before, much less compiling it into JavaScript. But I did it! This is necessary because the exported EDN data from Roam is all in one line, meaning GitHub would have to save the entire file each time, instead of just the new lines. This would eat up the storage pretty quickly if run every hour, as unchanged notes would be duplicated each time. And you wouldn't be able to see line-by-line changes in the git history.
-
 ## Support / Donations
 
 **If you experience any issues or errors with my backup script, let me know!** Either post as a GitHub issue here, or send me a message at my support email:
 
 [erik@eriknewhard.com](mailto:erik@eriknewhard.com)
+
+You can also check here: [Common error causes and their solutions](https://github.com/everruler12/roam2github/blob/main/documentation/Common%20error%20causes.md)
 
 ---
 
