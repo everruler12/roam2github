@@ -250,6 +250,7 @@ async function roam_open_graph(page, graph_name) {
 async function roam_export(page, filetype, download_dir) {
     return new Promise(async (resolve, reject) => {
         try {
+            await fs.ensureDir(download_dir)
 
             // log('- Checking for "..." button', filetype)
             await page.waitForSelector('.bp3-icon-more')
@@ -311,29 +312,32 @@ async function roam_export(page, filetype, download_dir) {
             await page.waitForSelector('.bp3-spinner', { hidden: true })
             log('- Downloading')
 
-            await fs.ensureDir(download_dir)
+            await waitForDownload(download_dir)
 
-            const file = await checkDownloads(download_dir)
-
-            resolve(file)
+            resolve()
 
         } catch (err) { reject(err) }
     })
 }
 
-async function checkDownloads(download_dir) {
+function waitForDownload(download_dir) {
     return new Promise(async (resolve, reject) => {
         try {
 
-            const files = await fs.readdir(download_dir)
-            const file = files[0]
+            checkDownloads()
 
-            if (file && file.match(/\.zip$/)) { // checks for .zip file
+            async function checkDownloads() {
 
-                log(file, 'downloaded!')
-                resolve(file)
+                const files = await fs.readdir(download_dir)
+                const file = files[0]
 
-            } else checkDownloads(download_dir)
+                if (file && file.match(/\.zip$/)) { // checks for .zip file
+
+                    log(file, 'downloaded!')
+                    resolve()
+
+                } else checkDownloads()
+            }
 
         } catch (err) { reject(err) }
     })
@@ -344,10 +348,13 @@ async function extract_file(download_dir) {
         try {
 
             const files = await fs.readdir(download_dir)
-            const file = files[0]
 
             if (files.length === 0) reject('Extraction error: download_dir is empty')
             if (files.length > 1) reject('Extraction error: download_dir contains more than one file')
+
+            const file = files[0]
+
+            if (!file.match(/\.zip$/)) reject('Extraction error: .zip not found')
 
             const file_fullpath = path.join(download_dir, file)
             const extract_dir = path.join(download_dir, '_extraction')
