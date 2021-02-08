@@ -71,7 +71,6 @@ function getRepoPath() {
                 return path.join(ubuntuPath, repo_name, repo_name) // actions/checkout@v2 outputs to path /home/runner/work/<repo_name>/<repo_name>
 
             } if (files2.length == 2 && withoutR2G.length == 1 && withoutR2G[0] == repo_name) {
-                // 
 
                 // log(files2, 'GitHub Actions path found. (Old main.yml being used)')
                 log('GitHub Actions path found. (Old main.yml being used)')
@@ -136,9 +135,10 @@ async function init() {
                     await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: download_dir })
 
                     log('Export', f.type)
-                    const file = await roam_export(page, f.type, download_dir)
+                    await roam_export(page, f.type, download_dir)
 
-                    await extract_file(file, download_dir)
+                    log('Extract')
+                    await extract_file(download_dir)
 
                     await format_and_save(f.type, download_dir, graph_name)
                     // TODO run download and formatting operations asynchronously. Can be done since json and edn are same as graph name.
@@ -339,9 +339,15 @@ async function checkDownloads(download_dir) {
     })
 }
 
-async function extract_file(file, download_dir) {
+async function extract_file(download_dir) {
     return new Promise(async (resolve, reject) => {
         try {
+
+            const files = await fs.readdir(download_dir)
+            const file = files[0]
+
+            if (files.length === 0) reject('Extraction error: download_dir is empty')
+            if (files.length > 1) reject('Extraction error: download_dir contains more than one file')
 
             const file_fullpath = path.join(download_dir, file)
             const extract_dir = path.join(download_dir, '_extraction')
@@ -392,7 +398,6 @@ async function format_and_save(filetype, download_dir, graph_name) {
             if (files.length === 0) reject('Extraction error: extract_dir is empty')
 
             if (filetype == 'Markdown') {
-
 
                 const markdown_dir = path.join(backup_dir, 'markdown', graph_name)
 
