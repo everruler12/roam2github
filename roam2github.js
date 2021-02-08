@@ -61,10 +61,20 @@ function getRepoPath() {
             repo_name = files[0]
             const files2 = fs.readdirSync(path.join(ubuntuPath, repo_name))
 
+            // path.join(ubuntuPath, repo_name, 'roam2github') == __dirname
+            const withoutR2G = files2.filter(f => f != 'roam2github') // for old main.yml
+
             if (files2.length === 1 && files2[0] == repo_name) {
 
-                // log(files2, 'GitHub Action path found')
-                log(files2, 'GitHub Actions path found')
+                // log(files2, 'GitHub Actions path found')
+                log('GitHub Actions path found')
+                return path.join(ubuntuPath, repo_name, repo_name) // actions/checkout@v2 outputs to path /home/runner/work/<repo_name>/<repo_name>
+
+            } if (files2.length == 2 && withoutR2G.length == 1 && withoutR2G[0] == repo_name) {
+                // 
+
+                // log(files2, 'GitHub Actions path found. (Old main.yml being used)')
+                log('GitHub Actions path found. (Old main.yml being used)')
                 return path.join(ubuntuPath, repo_name, repo_name) // actions/checkout@v2 outputs to path /home/runner/work/<repo_name>/<repo_name>
 
             } else {
