@@ -7,21 +7,12 @@ const edn_format = require('edn-formatter').edn_formatter.core.format
 
 console.time('R2G Exit after')
 
-// NEED better check, because .env could exist in repo. like check if secrets exist in process.env, if so, IS_GITHUB_ACTION = true, other wise try local .env, and check again
-let IS_LOCAL
-
-try {
-    if (fs.existsSync(path.join(__dirname, '.env'))) { // check for local .env
-        require('dotenv').config()
-        IS_LOCAL = true
-    } else {
-        IS_LOCAL = false
-    }
-} catch (err) { error(`.env file existence error: ${err}`) }
-const tmp_dir = path.join(__dirname, 'tmp')
-const backup_dir = IS_LOCAL ? path.join(__dirname, 'backup') : getRepoPath()
+if (fs.existsSync(path.join(__dirname, '.env'))) { // check for local .env
+    require('dotenv').config()
+}
 
 const { R2G_EMAIL, R2G_PASSWORD, R2G_GRAPH, BACKUP_JSON, BACKUP_EDN, BACKUP_MARKDOWN, MD_REPLACEMENT, MD_SKIP_BLANKS, TIMEOUT } = process.env
+// IDEA - MD_SEPARATE_DN put daily notes in separate directory
 
 if (!R2G_EMAIL) error('Secrets error: R2G_EMAIL not found')
 if (!R2G_PASSWORD) error('Secrets error: R2G_PASSWORD not found')
@@ -32,7 +23,7 @@ const graph_names = R2G_GRAPH.split(/,|\n/)  // comma or linebreak separator
     .filter(g => g != '') // remove blank lines
 // can also check "Not a valid name. Names can only contain letters, numbers, dashes and underscores." message that Roam gives when creating a new graph
 
-const filetypes = [
+const backup_types = [
     { type: "JSON", backup: BACKUP_JSON },
     { type: "EDN", backup: BACKUP_EDN },
     { type: "Markdown", backup: BACKUP_MARKDOWN }
@@ -40,19 +31,74 @@ const filetypes = [
     (f.backup === undefined || f.backup.toLowerCase() === 'true') ? f.backup = true : f.backup = false
     return f
 })
-
-const skip_blanks = (MD_SKIP_BLANKS && MD_SKIP_BLANKS.toLowerCase()) === 'false' ? false : true
-
 // what about specifying filetype for each graph? Maybe use settings.json in root of repo. But too complicated for non-programmers to set up.
 
+const md_replacement = MD_REPLACEMENT || '�'
+
+const md_skip_blanks = (MD_SKIP_BLANKS && MD_SKIP_BLANKS.toLowerCase()) === 'false' ? false : true
+
+const timeout = TIMEOUT || 600000 // 10min default
+
+const tmp_dir = path.join(__dirname, 'tmp')
+
+// ;
+// (async () => {
+// const repo_path = await getRepoPath()
+const repo_path = getRepoPath()
+const backup_dir = repo_path ? repo_path : path.join(__dirname, 'backup')
+// })();
+
+
 function getRepoPath() {
-    // This works because actions/checkout@v2 duplicates repo name in path /home/runner/work/roam-backup/roam-backup
-    const parent_dir = path.join(__dirname, '..')
-    const repo_name = path.basename(parent_dir)
-    return path.join(parent_dir, repo_name)
+    const ubuntuPath = path.join('/', 'home', 'runner', 'work')
+    const exists = fs.pathExistsSync(ubuntuPath)
+
+    if (exists) {
+        const files = fs.readdirSync(ubuntuPath)
+            .filter(f => !f.startsWith('_')) // filter out [ '_PipelineMapping', '_actions', '_temp', ]
+
+        if (files.length === 1) {
+            repo_name = files[0]
+            const files2 = fs.readdirSync(path.join(ubuntuPath, repo_name))
+
+            if (files2.length === 1 && files2[0] == repo_name) {
+
+                // log(files2, 'GitHub Action path found')
+                log(files2, 'GitHub Actions path found')
+                return path.join(ubuntuPath, repo_name, repo_name) // actions/checkout@v2 outputs to path /home/runner/work/<repo_name>/<repo_name>
+
+            } else {
+                // log(files, 'detected in', path.join(ubuntuPath, repo_name), '\nNot GitHub Action')
+                log('GitHub Actions path not found. Using local path')
+                return false
+            }
+
+        } else {
+            // log(files, 'detected in', ubuntuPath, '\nNot GitHub Action')
+            log('GitHub Actions path not found. Using local path')
+            return false
+        }
+
+    } else {
+        // log(ubuntuPath, 'does not exist. Not GitHub Action')
+        log('GitHub Actions path not found. Using local path')
+        return false
+    }
 }
 
+
 init()
+
+
+
+async function newPage(browser) {
+    const page = await browser.newPage()
+
+    page.setDefaultTimeout(timeout)
+    // page.on('console', consoleObj => console.log(consoleObj.text())) // for console.log() to work in page.evaluate() https://stackoverflow.com/a/46245945
+
+    return page
+}
 
 async function init() {
     try {
@@ -63,32 +109,30 @@ async function init() {
         const browser = await puppeteer.launch({ args: ['--no-sandbox'] }) // to run in GitHub Actions
         // const browser = await puppeteer.launch({ headless: false }) // to test locally and see what's going on
 
-        const page = await browser.newPage()
-        page.setDefaultTimeout(TIMEOUT || 600000) // 10min default
-        // page.on('console', consoleObj => console.log(consoleObj.text())) // for console.log() to work in page.evaluate() https://stackoverflow.com/a/46245945
-
-        page.on("dialog", async (dialog) => await dialog.accept()) // Handles "Changes will not be saved" dialog when trying to navigate away from official Roam help database https://roamresearch.com/#/app/help
 
         log('Login')
-        await roam_login(page)
+        await roam_login(browser)
 
         for (const graph_name of graph_names) {
 
+            const page = await newPage(browser)
+
             log('Open graph', censor(graph_name))
             await roam_open_graph(page, graph_name)
-            // TODO move const page = await browser.newPage() and page settings within roam_open_graph() - This will do away with 404 workaround, and allow downloading concurrently
 
-            for (const f of filetypes) {
+            for (const f of backup_types) {
                 if (f.backup) {
                     const download_dir = path.join(tmp_dir, graph_name, f.type.toLowerCase())
                     await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: download_dir })
 
                     log('Export', f.type)
-                    await roam_export(page, f.type, download_dir, graph_name)
+                    const file = await roam_export(page, f.type, download_dir)
+
+                    await extract_file(file, download_dir)
 
                     await format_and_save(f.type, download_dir, graph_name)
                     // TODO run download and formatting operations asynchronously. Can be done since json and edn are same as graph name.
-                    // Await for counter expecting total operations to be done graph_names.length * filetypes.filter(f=>f.backup).length
+                    // Await for counter expecting total operations to be done graph_names.length * backup_types.filter(f=>f.backup).length
                     // or Promises.all(arr) where arr is initiated outside For loop, and arr.push result of format_and)_save
                 }
             }
@@ -106,9 +150,11 @@ async function init() {
     console.timeEnd('R2G Exit after')
 }
 
-async function roam_login(page) {
+async function roam_login(browser) {
     return new Promise(async (resolve, reject) => {
         try {
+
+            const page = await newPage(browser)
 
             log('- Navigating to login page')
             await page.goto('https://roamresearch.com/#/signin')
@@ -116,9 +162,13 @@ async function roam_login(page) {
             log('- Checking for email field')
             await page.waitForSelector('input[name="email"]')
 
-            log('- (Wait 10 seconds)')
-            await page.waitForTimeout(10000) // because Roam auto refreshes the sign-in page, as mentioned here https://github.com/MatthieuBizien/roam-to-git/issues/87#issuecomment-763281895 (and can be seen in )
-            // seems to fix `R2G ERROR - Error: Protocol error (DOM.describeNode): Cannot find context with specified id`
+            log('- (Wait for auto-refresh)')
+            // log('- (Wait 10 seconds for auto-refresh)')
+            // await page.waitForTimeout(10000) // because Roam auto refreshes the sign-in page, as mentioned here https://github.com/MatthieuBizien/roam-to-git/issues/87#issuecomment-763281895 (and can be seen in non-headless browser)
+
+            await page.waitForSelector('.loading-astrolabe', { timeout: 20000 })
+            await page.waitForSelector('.loading-astrolabe', { hidden: true })
+            // log('- auto-refreshed')
 
             log('- Filling email field')
             await page.type('input[name="email"]', R2G_EMAIL)
@@ -128,11 +178,9 @@ async function roam_login(page) {
 
             log('- Checking for "Sign In" button')
             await page.waitForFunction(() => [...document.querySelectorAll('button.bp3-button')].find(button => button.innerText == 'Sign In'))
-            // const signin_button = await page.waitForXPath("//button[@class='bp3-button' and contains(., 'Sign In')]")
 
             log('- Clicking "Sign In"')
             await page.evaluate(() => { [...document.querySelectorAll('button.bp3-button')].find(button => button.innerText == 'Sign In').click() })
-            // await signin_button.click()
 
             const login_error_selector = 'div[style="font-size: 12px; color: red;"]' // error message on login page
             const graphs_selector = '.my-graphs' // successful login, on graphs selection page
@@ -151,7 +199,7 @@ async function roam_login(page) {
                 log('Login successful!')
                 resolve()
 
-            } else { // timeout?
+            } else {
                 reject('Login error: unknown')
             }
 
@@ -163,16 +211,7 @@ async function roam_open_graph(page, graph_name) {
     return new Promise(async (resolve, reject) => {
         try {
 
-            // TODO open new page instead, so run cocurrently
-
-            log('- (Wait 1 second)')
-            await page.waitForTimeout(1000) // to prevent `R2G ERROR - Error: net::ERR_ABORTED at https://roamresearch.com/404`
-
-            log('- Navigating away to 404 (workaround)')
-            await page.goto('https://roamresearch.com/404')// workaround to get disablecss and disablejs parameters to work by navigating away due to issue with puppeteer and # hash navigation (used in SPAs like Roam)
-
-            log('- (Wait 1 second)')
-            await page.waitForTimeout(1000)
+            page.on("dialog", async (dialog) => await dialog.accept()) // Handles "Changes will not be saved" dialog when trying to navigate away from official Roam help database https://roamresearch.com/#/app/help
 
             log('- Navigating to graph')
             await page.goto(`https://roamresearch.com/#/app/${graph_name}?disablecss=true&disablejs=true`)
@@ -192,20 +231,20 @@ async function roam_open_graph(page, graph_name) {
             // }
 
             log('Graph loaded!')
-            resolve()
+            resolve(page)
 
         } catch (err) { reject(err) }
     })
 }
 
-async function roam_export(page, filetype, download_dir, graph_name) {
+async function roam_export(page, filetype, download_dir) {
     return new Promise(async (resolve, reject) => {
         try {
 
             // log('- Checking for "..." button', filetype)
             await page.waitForSelector('.bp3-icon-more')
 
-            log('- (Wait 1 second)') // to check for Sync Quick Capture Notes with Workspace modal
+            log('- (check for "Sync Quick Capture Notes")') // to check for "Sync Quick Capture Notes with Workspace" modal
             await page.waitForTimeout(1000)
 
             if (await page.$('.rm-quick-capture-sync-modal')) {
@@ -220,11 +259,9 @@ async function roam_export(page, filetype, download_dir, graph_name) {
 
             log('- Checking for "Export All" option')
             await page.waitForFunction(() => [...document.querySelectorAll('li .bp3-fill')].find(li => li.innerText.match('Export All')))
-            // const exportAll_option = await page.waitForXPath("//div[@class='bp3-text-overflow-ellipsis bp3-fill' and contains(., 'Export All')]")
 
             log('- Clicking "Export All" option')
             await page.evaluate(() => { [...document.querySelectorAll('li .bp3-fill')].find(li => li.innerText.match('Export All')).click() })
-            // await exportAll_option.click()
 
             const chosen_format_selector = '.bp3-dialog .bp3-button-text'
 
@@ -236,15 +273,7 @@ async function roam_export(page, filetype, download_dir, graph_name) {
 
             if (filetype != chosen_format) {
 
-                // const dropdown_arrow = 'span.bp3-icon.bp3-icon-caret-down'
-
-                // log('- Checking for dropdown arrow')
-                // await page.waitForSelector(dropdown_arrow)
-                // const dropdown_button = await page.waitForXPath(`//span[@class='bp3-icon bp3-icon-caret-down']`)
-
                 log('- Clicking export format')
-                // await page.click(dropdown_arrow)
-                // await page.click(dropdown_button) // 2021-02-02 16:51:23.632 R2G ERROR - Error: JSHandles can be evaluated only in the context they were created!
                 await page.click(chosen_format_selector)
 
                 log('- Checking for dropdown options')
@@ -252,11 +281,9 @@ async function roam_export(page, filetype, download_dir, graph_name) {
 
                 log('- Checking for dropdown option', filetype)
                 await page.waitForFunction((filetype) => [...document.querySelectorAll('.bp3-text-overflow-ellipsis')].find(dropdown => dropdown.innerText.match(filetype)), filetype)
-                // const dropdown_option = await page.waitForXPath(`//div[@class='bp3-text-overflow-ellipsis bp3-fill' and contains(., '${filetype}')]`)
 
                 log('- Clicking', filetype)
                 await page.evaluate((filetype) => { [...document.querySelectorAll('.bp3-text-overflow-ellipsis')].find(dropdown => dropdown.innerText.match(filetype)).click() }, filetype)
-                // await dropdown_option.click()
 
             } else {
                 log('-', filetype, 'already selected')
@@ -264,11 +291,9 @@ async function roam_export(page, filetype, download_dir, graph_name) {
 
             log('- Checking for "Export All" button')
             await page.waitForFunction(() => document.querySelector('button.bp3-button.bp3-intent-primary').innerText == 'Export All')
-            // const exportAll_button = await page.waitForXPath("//button[@class='bp3-button bp3-intent-primary' and contains(., 'Export All')]")
 
             log('- Clicking "Export All" button')
             await page.evaluate(() => { document.querySelector('button.bp3-button.bp3-intent-primary').click() })
-            // await exportAll_button.click()
 
             log('- Waiting for download to start')
             await page.waitForSelector('.bp3-spinner')
@@ -278,32 +303,33 @@ async function roam_export(page, filetype, download_dir, graph_name) {
 
             await fs.ensureDir(download_dir)
 
+            const file = await checkDownloads(download_dir)
 
-            async function checkDownloads() {
-                try {
-
-                    const files = await fs.readdir(download_dir)
-                    const file = files[0]
-
-                    if (file && file.match(/\.zip$/)) { // checks for .zip file
-
-                        log(file, 'downloaded!')
-
-                        await extract_file(file, download_dir, filetype, graph_name)
-
-                        resolve()
-
-                    } else checkDownloads()
-
-                } catch (err) { reject(err) }
-            }
-            checkDownloads()
+            resolve(file)
 
         } catch (err) { reject(err) }
     })
 }
 
-async function extract_file(file, download_dir, filetype, graph_name) {
+async function checkDownloads(download_dir) {
+    return new Promise(async (resolve, reject) => {
+        try {
+
+            const files = await fs.readdir(download_dir)
+            const file = files[0]
+
+            if (file && file.match(/\.zip$/)) { // checks for .zip file
+
+                log(file, 'downloaded!')
+                resolve(file)
+
+            } else checkDownloads(download_dir)
+
+        } catch (err) { reject(err) }
+    })
+}
+
+async function extract_file(file, download_dir) {
     return new Promise(async (resolve, reject) => {
         try {
 
@@ -320,7 +346,7 @@ async function extract_file(file, download_dir, filetype, graph_name) {
                         return false
                     }
 
-                    if (skip_blanks && entry.uncompressedSize <= 3) { // files with 3 bytes just have a one blank block (like blank daily notes)
+                    if (md_skip_blanks && entry.uncompressedSize <= 3) { // files with 3 bytes just have a one blank block (like blank daily notes)
                         // log('  - Skipping blank file', entry.fileName, `(${entry.uncompressedSize} bytes`)
                         return false
                     }
@@ -402,7 +428,7 @@ async function format_and_save(filetype, download_dir, graph_name) {
                     log('- Saving formatted EDN')
                     await fs.outputFile(new_file_fullpath, new_edn)
 
-                } else reject(`format_and_save error: Unhandled filetype: ${fileext}`)
+                } else reject(`format_and_save error: Unhandled filetype: ${files}`)
                 // }
             }
 
@@ -411,6 +437,8 @@ async function format_and_save(filetype, download_dir, graph_name) {
         } catch (err) { reject(err) }
     })
 }
+
+
 
 function log(...messages) {
     const timestamp = new Date().toISOString().replace('T', ' ').replace('Z', '')
@@ -423,6 +451,45 @@ async function error(err) {
     // await page.screenshot({ path: path.join(download_dir, 'error.png' }) // will need to pass page as parameter... or set as parent scope
     process.exit(1)
 }
+
+// async function getRepoPath() {
+//     return new Promise(async (resolve, reject) => {
+//         try {
+
+//             const ubuntuPath = path.join('/', 'home', 'runner', 'work')
+//             const exists = await fs.pathExists(ubuntuPath)
+
+//             if (exists) {
+//                 const files = (await fs.readdir(ubuntuPath))
+//                     .filter(f => !f.startsWith('_')) // filter out [ '_PipelineMapping', '_actions', '_temp', ]
+
+//                 if (files.length === 1) {
+//                     repo_name = files[0]
+//                     const files2 = await fs.readdir(path.join(ubuntuPath, repo_name))
+
+//                     if (files2.length === 1 && files2[0] == repo_name) {
+
+//                         log(files2, 'GitHub Action path found')
+//                         resolve(path.join(ubuntuPath, repo_name, repo_name)) // actions/checkout@v2 outputs to path /home/runner/work/<repo_name>/<repo_name>
+
+//                     } else {
+//                         log(files, 'detected in', path.join(ubuntuPath, repo_name), '\nNot GitHub Action')
+//                         resolve(false)
+//                     }
+
+//                 } else {
+//                     log(files, 'detected in', ubuntuPath, '\nNot GitHub Action')
+//                     resolve(false)
+//                 }
+
+//             } else {
+//                 log(ubuntuPath, 'does not exist. Not GitHub Action')
+//                 resolve(false)
+//             }
+
+//         } catch (err) { reject(err) }
+//     })
+// }
 
 function checkFormattedEDN(original, formatted) {
     const reverse_format = formatted
@@ -451,7 +518,7 @@ function censor(graph_name) {
 function sanitizeFileName(fileName) {
     fileName = fileName.replace(/\//g, '／')
 
-    const sanitized = sanitize(fileName, { replacement: MD_REPLACEMENT || '�' })
+    const sanitized = sanitize(fileName, { replacement: md_replacement })
 
     if (sanitized != fileName) {
 
