@@ -1,6 +1,6 @@
 # Roam2Github
 
-## [Click here for setup instructions](https://github.com/everruler12/roam2github/blob/main/documentation/Setup%20Instructions.md)
+### **[Click here for setup instructions](https://github.com/everruler12/roam2github/blob/main/documentation/Setup%20Instructions.md)**
 
 Inspired by https://github.com/MatthieuBizien/roam-to-git
 
@@ -13,7 +13,7 @@ Roam-to-git has offered me great peace of mind knowing my Roam data is safe. How
 - Multiple graph backups in the same repo
 - Better error debugging and active support from the developer (Erik Newhard @everruler12) to get your backups running smoothly and error-free
 
-### [Click here for a list of common error causes and their solutions](https://github.com/everruler12/roam2github-demo#common-error-causes)
+### [Click here for a list of common error causes and their solutions](https://github.com/everruler12/roam2github/blob/main/documentation/Common%20error%20causes.md)
 
 ## Future Plans
 
