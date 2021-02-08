@@ -18,6 +18,7 @@ Roam-to-git has offered me great peace of mind knowing my Roam data is safe. How
 - [ ] New, full guide with step-by-step screen recordings
 - [ ] Update code to run asynchronously, instead of linearly, to cut down on run time
 - [ ] Use fipp for faster EDN formatting
+- [ ] Allow setup of public repo for running Actions and committing to private repo for backup, in order to bypass minute limit for private GitHub Actions.
 - [x] EDN support (2021-01-31)
 - [x] Multi graph support (2021-02-01)
 - [x] Markdown support (2021-02-04)
