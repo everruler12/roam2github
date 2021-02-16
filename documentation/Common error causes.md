@@ -14,7 +14,7 @@
     
     Make sure you're not using a Google account login, as this is not supported. (If you are, sign out of Roam, and on the sign-in page, click "Forgot your password" to set a password.)
     
-- Timed out with `R2G astrolabe spinning...` then `Error: The operation was canceled.` Possible causes:
+- Timed out with `R2G astrolabe spinning...` then `Error: The operation was canceled.` or `"TimeoutError: waiting for selector .loading-astrolabe to be hidden failed: timeout 600000ms exceeded"` Possible causes:
 
     - The most common reason is your `R2G_GRAPH` secret is incorrect. Try updating it (make sure it's only the graph name, not a URL)
 
