@@ -13,7 +13,7 @@
   },
   "devDependencies": {},
   "scripts": {
-    "start": "node roam2github.js"
+    "start": "node backup.js"
   },
   "repository": {
     "type": "git",
