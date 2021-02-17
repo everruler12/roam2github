@@ -1,4 +1,6 @@
-# Full Guide with Step-by-Step Screen Recordings
+# Full Guide with Step-by-Step Screenshots
+
+This guide was generously created by [flyq](https://github.com/flyq)
 
 ## 1. Create a new, private repository
 1. If you don't have the GitHub account, go to https://github.com/join to new a free personal account. More infomation: [Signing up for a new GitHub account](https://docs.github.com/en/github/getting-started-with-github/signing-up-for-a-new-github-account)   
