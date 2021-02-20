@@ -22,19 +22,19 @@ The `repository name` is up to you, and you should make it private to protect yo
 ![](./images/Get%20the%20graph%20name.png)   
 3. Go to your GitHub repository, and go to `Settings` > `Secrets`, and `New repository secret`:   
 ![](./images/Go%20to%20Settings.png)   
-4. Add `R2G_EMAIL` in Secret:   
+4. Add `ROAM_EMAIL` in Secret:   
 ![](./images/add%20R2G_EMAIL.png)   
-As you see, Name must be `R2G_EMAIL`, and Value is the email of your roam research account.   
-5. Add `R2G_PASSWORD` in Secret:   
+Name must be `ROAM_EMAIL`, and Value is the email of your roam research account.   
+5. Add `ROAM_PASSWORD` in Secret:   
 ![](./images/add%20R2G_PASSWORD.png)   
-The same to step 4, New repository secret to add `R2G_PASSWORD`. As you see, Name must be `R2G_PASSWORD`, and Value is the password of your roam research account.   
-6. Add `R2G_GRAPH` in Secret:   
+The same to step 4, New repository secret to add `ROAM_PASSWORD`. Name must be `ROAM_PASSWORD`, and Value is the password of your roam research account.   
+6. Add `ROAM_GRAPH` in Secret:   
 ![](./images/add%20R2G_GRAPH.png)   
-The same to step 4, New repository secret to add `R2G_GRAPH`. As you see, Name must be `R2G_GRAPH`, and Value is the name of your roam research graph, which you get from step 2.  For multiple graphs, add on separate lines (or separate by commas), Here I used commas.   
+The same to step 4, New repository secret to add `ROAM_GRAPH`. ame must be `ROAM_GRAPH`, and Value is the name of your roam research graph, which you get from step 2.  For multiple graphs, add on separate lines (or separate by commas), Here I used commas.   
 ## 3. Set the GitHub Repository's Actions
 1. Go to Actions, then click "set up a workflow yourself →"   
 ![](./images/Set%20workfow.png)   
-2. Delete the code in the editor, and copy/paste the code from here: [main.yml](https://raw.githubusercontent.com/everruler12/roam2github-demo/main/.github/workflows/main.yml)   
+2. Delete the code in the editor, and copy/paste the code from here: [main.yml](https://raw.githubusercontent.com/everruler12/roam2github-actions/main/.github/workflows/main.yml)   
 ![](./images/add%20yml.png)   
 3. Click `Start Commit` then `Commit new file`   
 ![](./images/add%20new%20file.png)   
