@@ -48,7 +48,7 @@ You can now backup multiple graphs without having to create a new GitHub repo fo
 - Page titles longer than 255 characters are automatically truncated (though they lose the .md extension)
 - no subdirectories
 - no blank files
-- The logs will list the files that have been renamed or overwritten.
+- ~~The logs will list the files that have been renamed or overwritten.~~ The logs no longer display file names, as this would be a privacy concern for the new way to run Actions publicly. 
 
 Unfortunate side-effect with markdown backups: files with duplicate names are overwritten (like [[test]] and [[Test]]). (This was also present in roam-to-git)
 
