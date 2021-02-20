@@ -24,10 +24,10 @@ Roam-to-git has offered me great peace of mind knowing my Roam data is safe. How
 - [ ] New, full guide with step-by-step screen recordings
 - [ ] Update code to run asynchronously, instead of linearly, to cut down on run time
 - [ ] Use fipp for faster EDN formatting
-- [ ] Allow setup of public repo for running Actions and committing to private repo for backup, in order to bypass minute limit for private GitHub Actions.
 - [x] EDN support (2021-01-31)
 - [x] Multi graph support (2021-02-01)
 - [x] Markdown support (2021-02-04)
+- [x] Allow setup of public repo for running Actions and committing to private repo for backup, in order to bypass minute limit for private GitHub Actions (2021-02-18)
 
 ## EDN Backups are live!
 
@@ -51,6 +51,10 @@ You can now backup multiple graphs without having to create a new GitHub repo fo
 - The logs will list the files that have been renamed or overwritten.
 
 Unfortunate side-effect with markdown backups: files with duplicate names are overwritten (like [[test]] and [[Test]]). (This was also present in roam-to-git)
+
+## Separate backup save location and backup script actions
+
+It is possible now to run the script actions from a public repo, to not be limited by 2000 minutes/month, and save the backup to a private repo. Note that Secret names have changed with this update. (The guides at the top have been updated with the new Secret names and main.yml. The old version is still up, but will no longer be updated.)
 
 ## Support / Donations
 
