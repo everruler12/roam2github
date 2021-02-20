@@ -16,6 +16,7 @@ The `repository name` is up to you, and you should make it private to protect yo
 ![](./images/private%20repository%20success.png)
 
 ## 2. Set the GitHub Repository's Secret
+*Note that the Secret names in the images show the old names of `R2G_EMAIL`, etc. but current names are `ROAM_EMAIL`, etc. as detailed in the text below.*
 1. Get the email and password of your roam research account:   
 ![](./images/email%20and%20password.png)   
 2. Get the name of graph you want to backup:   
