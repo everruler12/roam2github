@@ -1,3 +1,4 @@
+// TODO output log file to backup repo with list of changed markdown filenames and overwritten files, in order to preserve privacy in public actions
 const path = require('path')
 const fs = require('fs-extra')
 const puppeteer = require('puppeteer')
@@ -12,7 +13,7 @@ if (fs.existsSync(path.join(__dirname, '.env'))) { // check for local .env
 }
 
 const { ROAM_EMAIL, ROAM_PASSWORD, ROAM_GRAPH, BACKUP_JSON, BACKUP_EDN, BACKUP_MARKDOWN, MD_REPLACEMENT, MD_SKIP_BLANKS, TIMEOUT } = process.env
-// IDEA - MD_SEPARATE_DN put daily notes in separate directory
+// IDEA - MD_SEPARATE_DN put daily notes in separate directory. Maybe option for namespaces to be in separate folders, the default behavior.
 
 if (!ROAM_EMAIL) error('Secrets error: R2G_EMAIL not found')
 if (!ROAM_PASSWORD) error('Secrets error: R2G_PASSWORD not found')
@@ -45,7 +46,7 @@ const tmp_dir = path.join(__dirname, 'tmp')
 // (async () => {
 // const repo_path = await getRepoPath()
 const repo_path = getRepoPath()
-const backup_dir = repo_path ? repo_path : path.join(__dirname, 'backup')
+const backup_dir = repo_path ? repo_path : path.join(__dirname, 'backup') // if no repo_path use local path
 // })();
 
 
@@ -55,7 +56,7 @@ function getRepoPath() {
 
     if (exists) {
         const files = fs.readdirSync(ubuntuPath)
-            .filter(f => !f.startsWith('_')) // filter out [ '_PipelineMapping', '_actions', '_temp', ]
+            .filter(f => !f.startsWith('_')) // filters out [ '_PipelineMapping', '_actions', '_temp', ]
 
         if (files.length === 1) {
             repo_name = files[0]
@@ -66,14 +67,12 @@ function getRepoPath() {
 
             if (files2.length === 1 && files2[0] == repo_name) {
 
-                // log(files2, 'GitHub Actions path found')
-                log('GitHub Actions path found')
+                log('Detected GitHub Actions path')
                 return path.join(ubuntuPath, repo_name, repo_name) // actions/checkout@v2 outputs to path /home/runner/work/<repo_name>/<repo_name>
 
             } if (files2.length == 2 && withoutR2G.length == 1 && withoutR2G[0] == repo_name) {
 
-                // log(files2, 'GitHub Actions path found. (Old main.yml being used)')
-                log('GitHub Actions path found. (Old main.yml being used)')
+                log('Detected GitHub Actions path found. (Old main.yml being used, with potential "roam2github" repo name conflict)')
                 return path.join(ubuntuPath, repo_name, repo_name) // actions/checkout@v2 outputs to path /home/runner/work/<repo_name>/<repo_name>
 
             } else {
@@ -377,7 +376,7 @@ async function extract_file(download_dir) {
 
                     if (fs.pathExistsSync(path.join(extract_dir, entry.fileName))) {
 
-                        log('WARNING: file collision detected. Overwriting file with (sanitized) name:', entry.fileName)
+                        // log('WARNING: file collision detected. Overwriting file with (sanitized) name:', entry.fileName)
                         // reject(`Extraction error: file collision detected with sanitized filename: ${entry.fileName}`)
                         // TODO? renaming to...
                     }
@@ -472,45 +471,6 @@ async function error(err) {
     process.exit(1)
 }
 
-// async function getRepoPath() {
-//     return new Promise(async (resolve, reject) => {
-//         try {
-
-//             const ubuntuPath = path.join('/', 'home', 'runner', 'work')
-//             const exists = await fs.pathExists(ubuntuPath)
-
-//             if (exists) {
-//                 const files = (await fs.readdir(ubuntuPath))
-//                     .filter(f => !f.startsWith('_')) // filter out [ '_PipelineMapping', '_actions', '_temp', ]
-
-//                 if (files.length === 1) {
-//                     repo_name = files[0]
-//                     const files2 = await fs.readdir(path.join(ubuntuPath, repo_name))
-
-//                     if (files2.length === 1 && files2[0] == repo_name) {
-
-//                         log(files2, 'GitHub Action path found')
-//                         resolve(path.join(ubuntuPath, repo_name, repo_name)) // actions/checkout@v2 outputs to path /home/runner/work/<repo_name>/<repo_name>
-
-//                     } else {
-//                         log(files, 'detected in', path.join(ubuntuPath, repo_name), '\nNot GitHub Action')
-//                         resolve(false)
-//                     }
-
-//                 } else {
-//                     log(files, 'detected in', ubuntuPath, '\nNot GitHub Action')
-//                     resolve(false)
-//                 }
-
-//             } else {
-//                 log(ubuntuPath, 'does not exist. Not GitHub Action')
-//                 resolve(false)
-//             }
-
-//         } catch (err) { reject(err) }
-//     })
-// }
-
 function checkFormattedEDN(original, formatted) {
     const reverse_format = formatted
         .trim() // remove trailing line break
@@ -534,7 +494,7 @@ function sanitizeFileName(fileName) {
 
     if (sanitized != fileName) {
 
-        log('    Sanitized:', fileName, '\n                                       to:', sanitized)
+        // log('    Sanitized:', fileName, '\n                                       to:', sanitized)
         return sanitized
 
     } else return fileName
