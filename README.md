@@ -68,6 +68,6 @@ You can also check here: [Common error causes and their solutions](https://githu
 
 Some very generous people have been asking how to donate. If you like my work, I won't refuse your support!
 
-Email for PayPal and Amazon gift cards: [erik.newhard@gmail.com](erik.newhard@gmail.com)
+PayPal: https://paypal.me/eriknewhard
 
 Bitcoin (BTC) address: `bc1qsa3l8lraa3rjj6wyc7zdlv5z2xnlunppavtxw0`
