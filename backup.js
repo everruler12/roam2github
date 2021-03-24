@@ -266,10 +266,10 @@ async function roam_export(page, filetype, download_dir) {
             await page.click('.bp3-icon-more')
 
             log('- Checking for "Export All" option')
-            await page.waitForFunction(() => [...document.querySelectorAll('li .bp3-fill, button.bp3-button.bp3-intent-primary')].find(li => li.innerText.match('Export All')))
+            await page.waitForFunction(() => [...document.querySelectorAll('li .bp3-fill')].find(li => li.innerText.match('Export All')))
 
             log('- Clicking "Export All" option')
-            await page.evaluate(() => { [...document.querySelectorAll('li .bp3-fill, button.bp3-button.bp3-intent-primary')].find(li => li.innerText.match('Export All')).click() })
+            await page.evaluate(() => { [...document.querySelectorAll('li .bp3-fill')].find(li => li.innerText.match('Export All')).click() })
 
             const chosen_format_selector = '.bp3-dialog .bp3-button-text'
 
