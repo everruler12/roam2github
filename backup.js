@@ -298,10 +298,10 @@ async function roam_export(page, filetype, download_dir) {
             }
 
             log('- Checking for "Export All" button')
-            await page.waitForFunction(() => document.querySelector('button.bp3-button.bp3-intent-primary').innerText == 'Export All')
+            await page.waitForFunction(() => [...document.querySelectorAll('button.bp3-button.bp3-intent-primary')].find(button => button.innerText.match('Export All')))
 
             log('- Clicking "Export All" button')
-            await page.evaluate(() => { document.querySelector('button.bp3-button.bp3-intent-primary').click() })
+            await page.evaluate(() => { [...document.querySelectorAll('button.bp3-button.bp3-intent-primary')].find(button => button.innerText.match('Export All')).click() })
 
             log('- Waiting for download to start')
             await page.waitForSelector('.bp3-spinner')
