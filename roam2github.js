@@ -301,10 +301,10 @@ async function roam_export(page, filetype, download_dir) {
             }
 
             log('- Checking for "Export All" button')
-            await page.waitForFunction(() => document.querySelector('button.bp3-button.bp3-intent-primary').innerText == 'Export All')
+            await page.waitForFunction(() => document.querySelector('div.bp3-dialog button.bp3-button.bp3-intent-primary').innerText == 'Export All')
 
             log('- Clicking "Export All" button')
-            await page.evaluate(() => { document.querySelector('button.bp3-button.bp3-intent-primary').click() })
+            await page.evaluate(() => { document.querySelector('div.bp3-dialog button.bp3-button.bp3-intent-primary').click() })
 
             log('- Waiting for download to start')
             await page.waitForSelector('.bp3-spinner')
