@@ -2,8 +2,6 @@
 
 ### **[Click here to view guide on setting up free, unlimited, automatic Roam backups](https://www.notion.so/Roam2Github-Backup-Guide-650925859a4a42cf940e3fb74f5189f9)**
 
-[Click here for instructions with step-by-step screenshots, created by flyq](https://github.com/everruler12/roam2github/blob/main/documentation/Full%20Guide%20with%20Step-by-Step%20Screenshots.md) (not unlimited version)
-
 **[Click here for extra settings](https://github.com/everruler12/roam2github/blob/main/documentation/Settings%20for%20main.yml.md)**
 
 ---
