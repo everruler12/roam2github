@@ -262,6 +262,13 @@ async function roam_export(page, filetype, download_dir) {
                 log('- "Sync Quick Capture Notes" modal closed')
             }
 
+            if (await page.$('.rm-modal-dialog--expired-plan')) {
+                log('- Detected "Your subscription to Roam has expired." modal. Closing')
+                await page.keyboard.press('Escape')
+                await page.waitForSelector('.rm-modal-dialog--expired-plan', { hidden: true })
+                log('- Expired subscription modal closed')
+            }
+
             log('- Clicking "..." button')
             await page.click('.bp3-icon-more')
 
