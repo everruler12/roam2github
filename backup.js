@@ -15,9 +15,9 @@ if (fs.existsSync(path.join(__dirname, '.env'))) { // check for local .env
 const { ROAM_EMAIL, ROAM_PASSWORD, ROAM_GRAPH, BACKUP_JSON, BACKUP_EDN, BACKUP_MARKDOWN, MD_REPLACEMENT, MD_SKIP_BLANKS, TIMEOUT } = process.env
 // IDEA - MD_SEPARATE_DN put daily notes in separate directory. Maybe option for namespaces to be in separate folders, the default behavior.
 
-if (!ROAM_EMAIL) error('Secrets error: R2G_EMAIL not found')
-if (!ROAM_PASSWORD) error('Secrets error: R2G_PASSWORD not found')
-if (!ROAM_GRAPH) error('Secrets error: R2G_GRAPH not found')
+if (!ROAM_EMAIL) error('Secrets error: ROAM_EMAIL not found')
+if (!ROAM_PASSWORD) error('Secrets error: ROAM_PASSWORD not found')
+if (!ROAM_GRAPH) error('Secrets error: ROAM_GRAPH not found')
 
 const graph_names = ROAM_GRAPH.split(/,|\n/)  // comma or linebreak separator
     .map(g => g.trim())// remove extra spaces
