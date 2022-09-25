@@ -227,8 +227,8 @@ async function roam_open_graph(page, graph_name) {
             await page.waitForSelector('.loading-astrolabe')
             log('- astrolabe spinning...')
 
-            await page.waitForSelector('.loading-astrolabe', { hidden: true })
-            log('- astrolabe spinning stopped')
+            //await page.waitForSelector('.loading-astrolabe', { hidden: true })
+            //log('- astrolabe spinning stopped')
 
             // try {
             await page.waitForSelector('.roam-app') // add short timeout here, if fails, don't exit code 1, and instead CHECK if have permission to view graph
