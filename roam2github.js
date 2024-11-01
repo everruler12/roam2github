@@ -11,7 +11,7 @@ if (fs.existsSync(path.join(__dirname, '.env'))) { // check for local .env
     require('dotenv').config()
 }
 
-const { R2G_EMAIL, R2G_PASSWORD, R2G_GRAPH, BACKUP_JSON, BACKUP_EDN, BACKUP_MARKDOWN, MD_REPLACEMENT, MD_SKIP_BLANKS, TIMEOUT } = process.env
+const { R2G_EMAIL, R2G_PASSWORD, R2G_GRAPH, BACKUP_JSON, BACKUP_EDN, BACKUP_MARKDOWN, BACKUP_FLAT_MARKDOWN, BACKUP_MSGPACK, MD_REPLACEMENT, MD_SKIP_BLANKS, TIMEOUT } = process.env
 // IDEA - MD_SEPARATE_DN put daily notes in separate directory
 
 if (!R2G_EMAIL) error('Secrets error: R2G_EMAIL not found')
@@ -24,12 +24,14 @@ const graph_names = R2G_GRAPH.split(/,|\n/)  // comma or linebreak separator
 // can also check "Not a valid name. Names can only contain letters, numbers, dashes and underscores." message that Roam gives when creating a new graph
 
 const backup_types = [
-    { type: "JSON", backup: BACKUP_JSON },
-    { type: "EDN", backup: BACKUP_EDN },
-    { type: "Markdown", backup: BACKUP_MARKDOWN }
+    { type: "JSON", backup: BACKUP_JSON. extension: ".json" },
+    { type: "EDN", backup: BACKUP_EDN, extension: ".edn" },
+    { type: "Markdown", backup: BACKUP_MARKDOWN, extension: ".zip" },
+    { type: "Flat Markdown", backup: BACKUP_FLAT_MARKDOWN, extension: ".md" },
+    { type: "msgpack", backup: BACKUP_MSGPACK, extension: ".msgpack" }
 ].map(f => {
-    (f.backup === undefined || f.backup.toLowerCase() === 'true') ? f.backup = true : f.backup = false
-    return f
+    f.backup = (f.backup === undefined || f.backup.toLowerCase() === 'true');
+    return f;
 })
 // what about specifying filetype for each graph? Maybe use settings.json in root of repo. But too complicated for non-programmers to set up.
 
@@ -135,11 +137,12 @@ async function init() {
                     await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: download_dir })
 
                     log('Export', f.type)
-                    await roam_export(page, f.type, download_dir)
+                    await roam_export(page, f.type, f.extension, download_dir)
 
                     log('Extract')
-                    await extract_file(download_dir)
-
+                    if (f.extension == ".zip") {
+                        await extract_file(download_dir, f.extension)
+                    }
                     await format_and_save(f.type, download_dir, graph_name)
                     // TODO run download and formatting operations asynchronously. Can be done since json and edn are same as graph name.
                     // Await for counter expecting total operations to be done graph_names.length * backup_types.filter(f=>f.backup).length
@@ -247,7 +250,7 @@ async function roam_open_graph(page, graph_name) {
     })
 }
 
-async function roam_export(page, filetype, download_dir) {
+async function roam_export(page, filetype, extension, download_dir) {
     return new Promise(async (resolve, reject) => {
         try {
             await fs.ensureDir(download_dir)
@@ -312,7 +315,7 @@ async function roam_export(page, filetype, download_dir) {
             await page.waitForSelector('.bp3-spinner', { hidden: true })
             log('- Downloading')
 
-            await waitForDownload(download_dir)
+            await waitForDownload(download_dir, extension)
 
             resolve()
 
@@ -320,7 +323,7 @@ async function roam_export(page, filetype, download_dir) {
     })
 }
 
-function waitForDownload(download_dir) {
+function waitForDownload(download_dir, extension) {
     return new Promise(async (resolve, reject) => {
         try {
 
@@ -331,7 +334,7 @@ function waitForDownload(download_dir) {
                 const files = await fs.readdir(download_dir)
                 const file = files[0]
 
-                if (file && file.match(/\.zip$/)) { // checks for .zip file
+                if (file && file.match(new RegExp(`\\${extension}$`))) { // checks for specified extension
 
                     log(file, 'downloaded!')
                     resolve()
@@ -343,7 +346,7 @@ function waitForDownload(download_dir) {
     })
 }
 
-async function extract_file(download_dir) {
+async function extract_file(download_dir, extension) {
     return new Promise(async (resolve, reject) => {
         try {
 
@@ -398,13 +401,13 @@ async function format_and_save(filetype, download_dir, graph_name) {
     return new Promise(async (resolve, reject) => {
         try {
 
-            const extract_dir = path.join(download_dir, '_extraction')
-
-            const files = await fs.readdir(extract_dir)
-
-            if (files.length === 0) reject('Extraction error: extract_dir is empty')
-
             if (filetype == 'Markdown') {
+
+                const extract_dir = path.join(download_dir, '_extraction')
+
+                const files = await fs.readdir(extract_dir)
+
+                if (files.length === 0) reject('Extraction error: extract_dir is empty')
 
                 const markdown_dir = path.join(backup_dir, 'markdown', graph_name)
 
@@ -423,9 +426,9 @@ async function format_and_save(filetype, download_dir, graph_name) {
 
             } else {
 
-                // for (const file of files) {
+                const files = await fs.readdir(download_dir)
                 const file = files[0]
-                const file_fullpath = path.join(extract_dir, file)
+                const file_fullpath = path.join(download_dir, file)
                 const fileext = file.split('.').pop()
                 const new_file_fullpath = path.join(backup_dir, fileext, file)
 
@@ -439,7 +442,6 @@ async function format_and_save(filetype, download_dir, graph_name) {
                     await fs.outputFile(new_file_fullpath, new_json)
 
                 } else if (fileext == 'edn') {
-
                     log('- Formatting EDN (this can take a couple minutes for large graphs)') // This could take a couple minutes for large graphs
                     const edn = await fs.readFile(file_fullpath, 'utf-8')
 
@@ -451,7 +453,6 @@ async function format_and_save(filetype, download_dir, graph_name) {
                     await fs.outputFile(new_file_fullpath, new_edn)
 
                 } else reject(`format_and_save error: Unhandled filetype: ${files}`)
-                // }
             }
 
             resolve()
