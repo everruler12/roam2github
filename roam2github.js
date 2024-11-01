@@ -24,7 +24,7 @@ const graph_names = R2G_GRAPH.split(/,|\n/)  // comma or linebreak separator
 // can also check "Not a valid name. Names can only contain letters, numbers, dashes and underscores." message that Roam gives when creating a new graph
 
 const backup_types = [
-    { type: "JSON", backup: BACKUP_JSON. extension: ".json" },
+    { type: "JSON", backup: BACKUP_JSON, extension: ".json" },
     { type: "EDN", backup: BACKUP_EDN, extension: ".edn" },
     { type: "Markdown", backup: BACKUP_MARKDOWN, extension: ".zip" },
     { type: "Flat Markdown", backup: BACKUP_FLAT_MARKDOWN, extension: ".md" },
