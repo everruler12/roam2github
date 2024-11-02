@@ -431,6 +431,7 @@ async function format_and_save(filetype, download_dir, graph_name) {
                 const file_fullpath = path.join(download_dir, file)
                 const fileext = file.split('.').pop()
                 const new_file_fullpath = path.join(backup_dir, fileext, file)
+                const new_file_fullpath_nodate = new_file_fullpath.replace(/-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}/, '');
 
                 if (fileext == 'json') {
 
@@ -439,7 +440,7 @@ async function format_and_save(filetype, download_dir, graph_name) {
                     const new_json = JSON.stringify(json, null, 2)
 
                     log('- Saving formatted JSON')
-                    await fs.outputFile(new_file_fullpath, new_json)
+                    await fs.outputFile(new_file_fullpath_nodate, new_json)
 
                 } else if (fileext == 'edn') {
                     log('- Formatting EDN (this can take a couple minutes for large graphs)') // This could take a couple minutes for large graphs
@@ -450,7 +451,7 @@ async function format_and_save(filetype, download_dir, graph_name) {
                     checkFormattedEDN(edn, new_edn)
 
                     log('- Saving formatted EDN')
-                    await fs.outputFile(new_file_fullpath, new_edn)
+                    await fs.outputFile(new_file_fullpath_nodate, new_edn)
 
                 } else reject(`format_and_save error: Unhandled filetype: ${files}`)
             }
